@@ -33,15 +33,22 @@ export class HexaBoard<T> {
         if (coord.x < 0 || coord.x >= width || coord.y < 0 || coord.y >= height) {
             return false;
         }
-        if (coord.y <= halfHeight) {
+        if (coord.y < halfHeight) {
             if (excludedCases[coord.y] != null) {
                 return coord.x > excludedCases[coord.y]-1;
             } else {
                 return true;
             }
-        } else {
+        } else if (coord.y > halfHeight) {
             if (excludedCases[height-1 - coord.y] != null) {
                 return (width-1-coord.x) > excludedCases[height-1 - coord.y]-1;
+            } else {
+                return true;
+            }
+        } else {
+            // coord.y = halfHeight
+            if (excludedCases[coord.y] != null) {
+                return coord.x > excludedCases[coord.y]-1 && (width-1-coord.x) > excludedCases[height-1 - coord.y]-1;
             } else {
                 return true;
             }
@@ -60,7 +67,7 @@ export class HexaBoard<T> {
                        public readonly height: number,
                        public readonly excludedCases: ReadonlyArray<number>,
                        public readonly empty: T) {
-        if (this.excludedCases.length >= this.height/2) {
+        if (this.excludedCases.length >= (this.height/2)+1) {
             throw new Error('Invalid excluded cases specification for HexaBoard.');
         }
     }
@@ -77,7 +84,14 @@ export class HexaBoard<T> {
         if (equalT(this.empty, other.empty) === false) {
             return false;
         }
-        // TODO: check excludedCases
+        if (this.excludedCases.length !== other.excludedCases.length) {
+            return false;
+        }
+        for (let i: number = 0; i < this.excludedCases.length; i++) {
+            if (this.excludedCases[i] !== other.excludedCases[i]) {
+                return false;
+            }
+        }
         for (const coord of this.allCoords()) {
             if (equalT(this.getAtUnsafe(coord), other.getAtUnsafe(coord)) === false) {
                 return false;
@@ -98,7 +112,7 @@ export class HexaBoard<T> {
     protected setAtUnsafe(coord: Coord, v: T): this {
         const contents: T[][] = ArrayUtils.copyBiArray(this.contents);
         contents[coord.y][coord.x] = v;
-        return new HexaBoard(contents, this.width, this.height, this.excludedCases, this.empty) as this;
+        return new (<any> this.constructor)(contents, this.width, this.height, this.excludedCases, this.empty) as this;
     }
     public setAt(coord: Coord, v: T): this {
         if (this.isOnBoard(coord)) {
