@@ -100,21 +100,24 @@ describe('CountDownComponent', () => {
     }));
     it('should update written time correctly (closest rounding) even when playing in less than refreshing time', fakeAsync(() => {
         spyOn(component.outOfTimeAction, 'emit').and.callThrough();
-        component.setDuration(10 * 60 * 1000); // 10 minutes
-        component.start();
-
-        tick(800); // 9 min 59.2s -> 9:59
-        component.pause();
+        component.setDuration(599501); // 9 minutes 59 sec 501 ms
         testUtils.detectChanges();
         let timeText: string = testUtils.findElement('#remainingTime').nativeElement.innerHTML;
         expect(timeText).toBe('9:59');
+        component.start();
 
-        component.resume();
-        tick(600); // 9min58.6 -> 9:59
+        tick(401); // 9 min 59.501s -> 9 min 59.1 (9:59)
         component.pause();
         testUtils.detectChanges();
         timeText = testUtils.findElement('#remainingTime').nativeElement.innerHTML;
         expect(timeText).toBe('9:59');
+
+        component.resume();
+        tick(200); // 9 min 59.1 -> 9 min 58.9 (9:58)
+        component.pause();
+        testUtils.detectChanges();
+        timeText = testUtils.findElement('#remainingTime').nativeElement.innerHTML;
+        expect(timeText).toBe('9:58');
     }));
     it('should emit when timeout reached', fakeAsync(() => {
         spyOn(component.outOfTimeAction, 'emit').and.callThrough();
