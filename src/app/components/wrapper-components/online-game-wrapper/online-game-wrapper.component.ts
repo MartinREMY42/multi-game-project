@@ -511,8 +511,19 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
                 break;
             case 'DrawRefused':
                 break;
+            case 'LocalTimeAdded':
+                console.log( { request })
+                const addedLocalTime: number = 30 * 1000;
+                const localPlayer: Player = Player.of(request.data['player']);
+                this.addLocalTimeTo(localPlayer, addedLocalTime);
+                break;
+            case 'GlobalTimeAdded':
+                const addedGlobalTime: number = 5 * 60 * 1000;
+                const globalPlayer: Player = Player.of(request.data['player']);
+                this.addGlobalTimeTo(globalPlayer, addedGlobalTime);
+                break;
             default:
-                assert(request.code === 'DrawAccepted', 'there was an error : ' + JSON.stringify(request) + ' had ' + request.code + ' value');
+                assert(request.code === 'DrawAccepted', 'Unknown RequestType : ' + request.code + ' for ' + JSON.stringify(request));
                 this.acceptDraw();
                 break;
         }
@@ -759,6 +770,33 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
             return false;
         }
         return true;
+    }
+    public addGlobalTime(): Promise<void> {
+        console.log('compo add global')
+        const giver: Player = Player.of(this.observerRole);
+        return this.gameService.addGlobalTime(this.currentPartId, this.currentPart, giver);
+    }
+    public addLocalTime(): Promise<void> {
+        const giver: Player = Player.of(this.observerRole);
+        return this.gameService.addLocalTime(giver, this.currentPartId);
+    }
+    public addLocalTimeTo(player: Player, addedMs: number): void {
+        if (player === Player.ZERO) {
+            const currentDuration: number = this.chronoZeroLocal.remainingMs;
+            this.chronoZeroLocal.changeDuration(currentDuration + addedMs);
+        } else {
+            const currentDuration: number = this.chronoOneLocal.remainingMs;
+            this.chronoOneLocal.changeDuration(currentDuration + addedMs);
+        }
+    }
+    public addGlobalTimeTo(player: Player, addedMs: number): void {
+        if (player === Player.ZERO) {
+            const currentDuration: number = this.chronoZeroGlobal.remainingMs;
+            this.chronoZeroGlobal.changeDuration(currentDuration + addedMs);
+        } else {
+            const currentDuration: number = this.chronoOneGlobal.remainingMs;
+            this.chronoOneGlobal.changeDuration(currentDuration + addedMs);
+        }
     }
     public ngOnDestroy(): void {
         if (this.routerEventsSub && this.routerEventsSub.unsubscribe) {

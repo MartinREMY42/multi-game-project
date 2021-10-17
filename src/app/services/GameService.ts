@@ -260,7 +260,8 @@ export class GameService implements OnDestroy {
                                 part: Part,
                                 observerRole: Player,
                                 msToSubstract: [number, number])
-    : Promise<void> {
+    : Promise<void>
+    {
         assert(observerRole !== Player.NONE, 'Illegal for observer to make request');
         assert(part.doc.request.data['player'] !== observerRole.value, 'Illegal to accept your own request.');
 
@@ -287,6 +288,34 @@ export class GameService implements OnDestroy {
         return this.partDao.update(id, {
             request,
         });
+    }
+    public async addGlobalTime(id: string,
+                               part: Part,
+                               observerRole: Player)
+    : Promise<void>
+    {
+        console.log('service add global')
+        assert(observerRole !== Player.NONE, 'Illegal for observer to make request');
+
+        let update: Partial<IPart> = {
+            request: Request.globalTimeAdded(observerRole.getOpponent()),
+        };
+        if (observerRole === Player.ZERO) {
+            update = {
+                ...update,
+                remainingMsForOne: part.doc.remainingMsForOne + 5 * 60 * 1000,
+            };
+        } else {
+            update = {
+                ...update,
+                remainingMsForZero: part.doc.remainingMsForZero + 5 * 60 * 1000,
+            };
+        }
+        console.log('service global about to dao')
+        return await this.partDao.update(id, update);
+    }
+    public async addLocalTime(observerRole: Player, id: string): Promise<void> {
+        return await this.partDao.update(id, { request: Request.localTimeAdded(observerRole.getOpponent()) });
     }
     public stopObserving(): void {
         display(GameService.VERBOSE, 'GameService.stopObserving();');

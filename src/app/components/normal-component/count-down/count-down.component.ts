@@ -12,6 +12,7 @@ export class CountDownComponent implements OnInit, OnDestroy {
     @Input() debugName: string;
     @Input() dangerTimeLimit: number;
     @Input() active: boolean;
+    @Input() canAddTime: boolean;
 
     public remainingMs: number;
     public displayedSec: number;
@@ -24,6 +25,7 @@ export class CountDownComponent implements OnInit, OnDestroy {
     private startTime: number;
 
     @Output() outOfTimeAction: EventEmitter<void> = new EventEmitter<void>();
+    @Output() addTimeToOpponent: EventEmitter<void> = new EventEmitter<void>();
 
     public readonly DANGER_TIME_EVEN: { [key: string]: string } = {
         'color': 'red',
@@ -164,5 +166,8 @@ export class CountDownComponent implements OnInit, OnDestroy {
     }
     public ngOnDestroy(): void {
         this.clearTimeouts();
+    }
+    public addTime(): void {
+        this.addTimeToOpponent.emit();
     }
 }
