@@ -10373,11 +10373,20 @@ html {
 }
 
 .endgame-bg {
-    background-color: #9ea0b3;
-  }
+  background-color: #9ea0b3;
+}
 
-  .rounded-div {
-    -moz-border-radius: 18px;
-    -webkit-border-radius: 18px;
-    border-radius: 18px;
-  }
+.rounded-div {
+  -moz-border-radius: 18px;
+  -webkit-border-radius: 18px;
+  border-radius: 18px;
+}
+
+.remainingTimeText {
+  margin: auto;
+  width: 67%
+}
+
+.remainingTimeButton {
+    width: 33%;
+}

@@ -1,11 +1,11 @@
 <div class="tile"
-     style="background-color: darkgrey;">
+     [ngStyle]="getBackgroundColor()">
     <p id="remainingTime"
-       style="margin: auto; width: 67%"
+       class="remainingTimeText"
        [ngStyle]="getTimeStyle()">{{ displayedMinute }}:{{ displayedSec | number:'2.0-0' }}</p>
     <button id="addTimeButton"
-            class="button is-small"
-            style="width: 33%; background-color: darkgrey;"
+            class="button is-small remainingTimeButton"
+            [ngStyle]="getBackgroundColor()"
             *ngIf="canAddTime"
             (click)="addTime()"
     > + </button>

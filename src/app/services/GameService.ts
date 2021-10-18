@@ -213,7 +213,7 @@ export class GameService implements OnDestroy {
     }
     public acceptDraw(partId: string): Promise<void> {
         return this.partDao.update(partId, {
-            result: MGPResult.DRAW.value,
+            result: MGPResult.AGREED_DRAW.value,
             request: null,
         });
     }
@@ -294,7 +294,6 @@ export class GameService implements OnDestroy {
                                observerRole: Player)
     : Promise<void>
     {
-        console.log('service add global')
         assert(observerRole !== Player.NONE, 'Illegal for observer to make request');
 
         let update: Partial<IPart> = {
@@ -311,7 +310,6 @@ export class GameService implements OnDestroy {
                 remainingMsForZero: part.doc.remainingMsForZero + 5 * 60 * 1000,
             };
         }
-        console.log('service global about to dao')
         return await this.partDao.update(id, update);
     }
     public async addLocalTime(observerRole: Player, id: string): Promise<void> {

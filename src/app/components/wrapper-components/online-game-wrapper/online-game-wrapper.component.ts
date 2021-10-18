@@ -19,10 +19,13 @@ import { Player } from 'src/app/jscaip/Player';
 import { MGPValidation } from 'src/app/utils/MGPValidation';
 import { assert, display, JSONValue, JSONValueWithoutArray } from 'src/app/utils/utils';
 import { ObjectDifference } from 'src/app/utils/ObjectUtils';
-import { GameStatus } from 'src/app/jscaip/Rules';
+import { GameStatus, Rules } from 'src/app/jscaip/Rules';
 import { ArrayUtils } from 'src/app/utils/ArrayUtils';
 import { Time } from 'src/app/domain/Time';
 import { getMillisecondsDifference } from 'src/app/utils/TimeUtils';
+import { LegalityStatus } from 'src/app/jscaip/LegalityStatus';
+import { last } from 'rxjs/operators';
+import { AbstractGameState, GameState } from 'src/app/jscaip/GameState';
 
 export class UpdateType {
 
@@ -333,15 +336,17 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
         this.switchPlayer();
         let currentPartTurn: number;
         const listMoves: JSONValue[] = ArrayUtils.copyImmutableArray(part.doc.listMoves);
-        while (this.gameComponent.rules.node.gameState.turn < listMoves.length) {
-            currentPartTurn = this.gameComponent.rules.node.gameState.turn;
+        const rules: Rules<Move, AbstractGameState, LegalityStatus> = this.gameComponent.rules;
+        while (rules.node.gameState.turn < listMoves.length) {
+            currentPartTurn = rules.node.gameState.turn;
             const chosenMove: Move = this.gameComponent.encoder.decode(listMoves[currentPartTurn]);
-            const correctDBMove: boolean = this.gameComponent.rules.choose(chosenMove);
+            const legality: LegalityStatus = rules.isLegal(chosenMove, rules.node.gameState);
             const message: string = 'We received an incorrect db move: ' + chosenMove.toString() +
                                     ' in ' + listMoves + ' at turn ' + currentPartTurn;
-            assert(correctDBMove === true, message);
+            assert(legality.legal.isSuccess(), message + ' because "' + legality.legal.reason + '"');
+            rules.choose(chosenMove);
         }
-        this.currentPlayer = this.players[this.gameComponent.rules.node.gameState.turn % 2];
+        this.currentPlayer = this.players[rules.node.gameState.turn % 2];
         this.gameComponent.updateBoard();
     }
     public switchPlayer(): void {
@@ -370,10 +375,16 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
         const currentPart: Part = this.currentPart;
         const player: Player = Player.fromTurn(currentPart.doc.turn);
         this.endGame = true;
-        if (MGPResult.VICTORY.value === currentPart.doc.result) {
+        const lastMoveResult: MGPResult[] = [MGPResult.VICTORY, MGPResult.DRAW];
+        const endGameIsMove: boolean = lastMoveResult.some((r: MGPResult) => r.value === currentPart.doc.result);
+        if (endGameIsMove) {
             this.doNewMoves(this.currentPart);
         } else {
-            const endGameResults: MGPResult[] = [MGPResult.DRAW, MGPResult.RESIGN, MGPResult.TIMEOUT];
+            const endGameResults: MGPResult[] = [
+                MGPResult.RESIGN,
+                MGPResult.TIMEOUT,
+                MGPResult.AGREED_DRAW,
+            ];
             const resultIsIncluded: boolean =
                 endGameResults.some((result: MGPResult) => result.value === currentPart.doc.result);
             assert(resultIsIncluded === true, 'Unknown type of end game (' + currentPart.doc.result + ')');
@@ -382,6 +393,7 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
         this.stopCountdownsFor(player);
     }
     public notifyDraw(encodedMove: JSONValueWithoutArray, scorePlayerZero: number, scorePlayerOne: number): void {
+        console.log('found a draw !');
         this.endGame = true;
         this.gameService.updateDBBoard(this.currentPartId,
                                        encodedMove,
@@ -523,7 +535,6 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
             case 'DrawRefused':
                 break;
             case 'LocalTimeAdded':
-                console.log( { request })
                 const addedLocalTime: number = 30 * 1000;
                 const localPlayer: Player = Player.of(request.data['player']);
                 this.addLocalTimeTo(localPlayer, addedLocalTime);
@@ -788,7 +799,6 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
         return true;
     }
     public addGlobalTime(): Promise<void> {
-        console.log('compo add global')
         const giver: Player = Player.of(this.observerRole);
         return this.gameService.addGlobalTime(this.currentPartId, this.currentPart, giver);
     }

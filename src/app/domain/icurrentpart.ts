@@ -63,6 +63,7 @@ export interface ICurrentPartId {
 }
 export type IMGPResult = number;
 export class MGPResult {
+
     public static readonly DRAW: MGPResult = new MGPResult(0);
 
     public static readonly RESIGN: MGPResult = new MGPResult(1);

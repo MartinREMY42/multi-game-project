@@ -27,6 +27,7 @@ import { Time } from 'src/app/domain/Time';
 import { getMillisecondsDifference } from 'src/app/utils/TimeUtils';
 import { GameWrapperMessages } from '../GameWrapper';
 import { MessageDisplayer } from 'src/app/services/message-displayer/MessageDisplayer';
+import { ArrayUtils } from 'src/app/utils/ArrayUtils';
 
 describe('OnlineGameWrapperComponent of Quarto:', () => {
 
@@ -160,7 +161,7 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
         const state: QuartoState = wrapper.gameComponent.rules.node.gameState as QuartoState;
         const result: MGPValidation = await wrapper.gameComponent.chooseMove(move, state, null, null);
         expect(result.isSuccess())
-            .withContext('move should be legal but here: ' + result.reason)
+            .withContext('move ' + move.toString() + ' should be legal but here: ' + result.reason)
             .toEqual(legal);
         componentTestUtils.detectChanges();
         tick(1);
@@ -189,7 +190,7 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
     : Promise<void>
     {
         return await receivePartDAOUpdate({
-            listMoves: moves,
+            listMoves: ArrayUtils.copyImmutableArray(moves),
             turn: moves.length,
             request: null,
             scorePlayerOne: null,
@@ -199,13 +200,25 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             lastMoveTime: firebase.firestore.FieldValue.serverTimestamp(),
         });
     }
-    async function prepareBoard(moves: QuartoMove[]): Promise<void> {
-        await prepareStartedGameFor({ pseudo: 'creator', verified: true });
+    async function prepareBoard(moves: QuartoMove[], forSecondPlayer?: boolean): Promise<void> {
+        let authUser: AuthUser = { pseudo: 'creator', verified: true };
+        if (forSecondPlayer) {
+            authUser = { pseudo: 'firstCandidate', verified: true };
+        }
+        await prepareStartedGameFor(authUser);
         tick(1);
         const receivedMoves: number[] = [];
         let remainingMsForZero: number = 1800 * 1000;
         let remainingMsForOne: number = 1800 * 1000;
-        for (let i: number = 0; i < moves.length; i+=2) {
+        let offset: number = 0;
+        if (forSecondPlayer === true) {
+            offset = 1;
+            const firstMove: QuartoMove = moves[0];
+            const encodedMove: number = QuartoMove.encoder.encodeNumber(firstMove);
+            receivedMoves.push(encodedMove);
+            await receiveNewMoves(receivedMoves, remainingMsForZero, remainingMsForOne);
+        }
+        for (let i: number = offset; i < moves.length; i+=2) {
             const move: QuartoMove = moves[i];
             await doMove(moves[i], true);
             receivedMoves.push(QuartoMove.encoder.encodeNumber(move), QuartoMove.encoder.encodeNumber(moves[i+1]));
@@ -340,36 +353,6 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
         expect(messageDisplayer.gameMessage).toHaveBeenCalledWith(GameWrapperMessages.NOT_YOUR_TURN());
 
         tick(wrapper.joiner.maximalMoveDuration * 1000);
-    }));
-    it('Victory move from player should notifyVictory', fakeAsync(async() => {
-        const move0: QuartoMove = new QuartoMove(0, 3, QuartoPiece.AAAB);
-        const move1: QuartoMove = new QuartoMove(1, 3, QuartoPiece.AABA);
-        const move2: QuartoMove = new QuartoMove(2, 3, QuartoPiece.BBBB);
-        const move3: QuartoMove = new QuartoMove(0, 0, QuartoPiece.AABB);
-        await prepareBoard([move0, move1, move2, move3]);
-        componentTestUtils.expectElementNotToExist('#winnerIndicator');
-
-        spyOn(partDAO, 'update').and.callThrough();
-        const winningMove: QuartoMove = new QuartoMove(3, 3, QuartoPiece.ABAA);
-        await doMove(winningMove, true);
-
-        expect(wrapper.gameComponent.rules.node.move.toString()).toBe(winningMove.toString());
-        expect(partDAO.update).toHaveBeenCalledTimes(1);
-        expect(partDAO.update).toHaveBeenCalledWith('joinerId', {
-            listMoves: [move0, move1, move2, move3, winningMove].map(QuartoMove.encoder.encodeNumber),
-            turn: 5,
-            scorePlayerZero: null,
-            scorePlayerOne: null,
-            // remainingTimes are not present on the first move of a current board
-            request: null,
-            lastMoveTime: firebase.firestore.FieldValue.serverTimestamp(),
-            winner: 'creator',
-            loser: 'firstCandidate',
-            result: MGPResult.VICTORY.value,
-        });
-        expect(componentTestUtils.findElement('#youWonIndicator'))
-            .withContext('Component should show who is the winner.')
-            .toBeTruthy();
     }));
     it('Should allow player to pass when gameComponent allows it', fakeAsync(async() => {
         await prepareStartedGameFor({ pseudo: 'creator', verified: true });
@@ -830,7 +813,89 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             }));
         });
     });
-    describe('Draw', () => {
+    describe('Move victory', () => {
+        it('Victory move from player should notifyVictory', fakeAsync(async() => {
+            //  Given a board on which user can win this move
+            const move0: QuartoMove = new QuartoMove(0, 3, QuartoPiece.AAAB);
+            const move1: QuartoMove = new QuartoMove(1, 3, QuartoPiece.AABA);
+            const move2: QuartoMove = new QuartoMove(2, 3, QuartoPiece.BBBB);
+            const move3: QuartoMove = new QuartoMove(0, 0, QuartoPiece.AABB);
+            await prepareBoard([move0, move1, move2, move3]);
+            componentTestUtils.expectElementNotToExist('#winnerIndicator');
+
+            // when doing wimming move
+            spyOn(partDAO, 'update').and.callThrough();
+            const winningMove: QuartoMove = new QuartoMove(3, 3, QuartoPiece.ABAA);
+            await doMove(winningMove, true);
+
+            // then we game should be a victory
+            expect(wrapper.gameComponent.rules.node.move.toString()).toBe(winningMove.toString());
+            expect(partDAO.update).toHaveBeenCalledOnceWith('joinerId', {
+                listMoves: [move0, move1, move2, move3, winningMove].map(QuartoMove.encoder.encodeNumber),
+                turn: 5,
+                scorePlayerZero: null,
+                scorePlayerOne: null,
+                // remainingTimes are not present on the first move of a current board
+                request: null,
+                lastMoveTime: firebase.firestore.FieldValue.serverTimestamp(),
+                winner: 'creator',
+                loser: 'firstCandidate',
+                result: MGPResult.VICTORY.value,
+            });
+            expect(componentTestUtils.findElement('#youWonIndicator'))
+                .withContext('Component should show who is the winner.')
+                .toBeTruthy();
+            expectGameToBeOver();
+        }));
+        it('Draw move from player should notifyDraw', fakeAsync(async() => {
+            //  Given a board on which user can draw
+            const moves: QuartoMove[] = [
+                new QuartoMove(0, 0, QuartoPiece.AAAB),
+                new QuartoMove(0, 1, QuartoPiece.AABA),
+                new QuartoMove(0, 2, QuartoPiece.BBAA),
+                new QuartoMove(0, 3, QuartoPiece.ABAA),
+
+                new QuartoMove(1, 0, QuartoPiece.ABAB),
+                new QuartoMove(1, 1, QuartoPiece.ABBA),
+                new QuartoMove(1, 2, QuartoPiece.BABB),
+                new QuartoMove(1, 3, QuartoPiece.BAAA),
+
+                new QuartoMove(2, 0, QuartoPiece.BAAB),
+                new QuartoMove(2, 1, QuartoPiece.BABA),
+                new QuartoMove(2, 2, QuartoPiece.ABBB),
+                new QuartoMove(2, 3, QuartoPiece.AABB),
+
+                new QuartoMove(3, 0, QuartoPiece.BBBA),
+                new QuartoMove(3, 1, QuartoPiece.BBAB),
+                new QuartoMove(3, 2, QuartoPiece.BBBB),
+            ];
+            await prepareBoard(moves, true);
+            componentTestUtils.expectElementNotToExist('#winnerIndicator');
+
+            // when doing wimming move
+            spyOn(partDAO, 'update').and.callThrough();
+            const drawingMove: QuartoMove = new QuartoMove(3, 3, QuartoPiece.NONE);
+            await doMove(drawingMove, true);
+
+            // then we game should be a victory
+            expect(wrapper.gameComponent.rules.node.move.toString()).toBe(drawingMove.toString());
+            const listMoves: QuartoMove[] = moves.concat(drawingMove);
+            expect(partDAO.update).toHaveBeenCalledOnceWith('joinerId', {
+                listMoves: listMoves.map(QuartoMove.encoder.encodeNumber),
+                turn: 16,
+                scorePlayerZero: null,
+                scorePlayerOne: null,
+                // remainingTimes ??
+                request: null,
+                lastMoveTime: firebase.firestore.FieldValue.serverTimestamp(),
+                result: MGPResult.DRAW.value,
+            });
+            expect(componentTestUtils.findElement('#drawIndicator'))
+                .withContext('Component should show it is a draw.')
+                .toBeTruthy();
+        }));
+    });
+    describe('Agreed Draw', () => {
         async function setup() {
             await prepareStartedGameFor({ pseudo: 'creator', verified: true });
             tick(1);
@@ -873,7 +938,7 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
 
             tick(1);
             expect(partDAO.update).toHaveBeenCalledWith('joinerId', {
-                result: MGPResult.DRAW.value,
+                result: MGPResult.AGREED_DRAW.value,
                 request: null,
             });
 
@@ -887,7 +952,7 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             // when draw is accepted
             spyOn(partDAO, 'update').and.callThrough();
             await receivePartDAOUpdate({
-                result: MGPResult.DRAW.value,
+                result: MGPResult.AGREED_DRAW.value,
                 request: Request.drawAccepted,
             });
 
@@ -1062,9 +1127,10 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             expect(partDAO.update).toHaveBeenCalledOnceWith('joinerId', {
                 request: Request.localTimeAdded(Player.ONE),
             });
-            tick(wrapper.joiner.maximalMoveDuration * 1000);
+            const msUntilTimeout: number = (wrapper.joiner.maximalMoveDuration + 30) * 1000;
+            tick(msUntilTimeout);
         }));
-        it('should add time to chrono when receiving the addLocalTime request (Player.ONE)', fakeAsync(async() => {
+        it('should add time to local chrono when receiving the addLocalTime request (Player.ONE)', fakeAsync(async() => {
             // Given an onlineGameComponent
             await prepareStartedGameFor({ pseudo: 'creator', verified: true });
             spyOn(partDAO, 'update').and.callThrough();
@@ -1077,10 +1143,11 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
 
             // then chrono local of player one should be filled
             const wrapper: OnlineGameWrapperComponent = componentTestUtils.wrapper as OnlineGameWrapperComponent;
-            expect(wrapper.chronoOneLocal.remainingMs).toBe(150 * 1000); // initial 2 minutes + 30 sec
-            tick(wrapper.joiner.maximalMoveDuration * 1000);
+            const msUntilTimeout: number = (wrapper.joiner.maximalMoveDuration + 30) * 1000;
+            expect(wrapper.chronoOneLocal.remainingMs).toBe(msUntilTimeout); // initial 2 minutes + 30 sec
+            tick(msUntilTimeout);
         }));
-        it('should add time to chrono when receiving the addLocalTime request (Player.ZERO)', fakeAsync(async() => {
+        it('should add time to local chrono when receiving the addLocalTime request (Player.ZERO)', fakeAsync(async() => {
             // Given an onlineGameComponent
             await prepareStartedGameFor({ pseudo: 'creator', verified: true });
             spyOn(partDAO, 'update').and.callThrough();
@@ -1090,11 +1157,13 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             await receivePartDAOUpdate({
                 request: Request.localTimeAdded(Player.ZERO),
             });
+            componentTestUtils.detectChanges();
 
             // then chrono local of player one should be filled
             const wrapper: OnlineGameWrapperComponent = componentTestUtils.wrapper as OnlineGameWrapperComponent;
-            expect(wrapper.chronoZeroLocal.remainingMs).toBe(150 * 1000); // initial 2 minutes + 30 sec
-            tick(wrapper.joiner.maximalMoveDuration * 1000);
+            const msUntilTimeout: number = (wrapper.joiner.maximalMoveDuration + 30) * 1000;
+            expect(wrapper.chronoZeroLocal.remainingMs).toBe(msUntilTimeout); // initial 2 minutes + 30 sec
+            tick(msUntilTimeout);
         }));
         it('should allow to add global time to opponent', fakeAsync(async() => {
             // Given an onlineGameComponent
@@ -1110,9 +1179,11 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
                 request: Request.globalTimeAdded(Player.ONE),
                 remainingMsForOne: (1800 * 1000) + (5 * 60 * 1000),
             });
-            tick(wrapper.joiner.maximalMoveDuration * 1000);
+            const msUntilTimeout: number = wrapper.joiner.maximalMoveDuration * 1000;
+            expect(wrapper.chronoOneLocal.remainingMs).toBe(msUntilTimeout); // initial 2 minutes
+            tick(msUntilTimeout);
         }));
-        it('should add time to chrono when receiving the addGlobalTime request (Player.ONE)', fakeAsync(async() => {
+        it('should add time to global chrono when receiving the addGlobalTime request (Player.ONE)', fakeAsync(async() => {
             // Given an onlineGameComponent
             await prepareStartedGameFor({ pseudo: 'creator', verified: true });
             spyOn(partDAO, 'update').and.callThrough();
@@ -1128,7 +1199,7 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             expect(wrapper.chronoOneGlobal.remainingMs).toBe((30 * 60 * 1000) + (5 * 60 * 1000));
             tick(wrapper.joiner.maximalMoveDuration * 1000);
         }));
-        it('should add time to chrono when receiving the addGlobalTime request (Player.ZERO)', fakeAsync(async() => {
+        it('should add time to global chrono when receiving the addGlobalTime request (Player.ZERO)', fakeAsync(async() => {
             // Given an onlineGameComponent
             await prepareStartedGameFor({ pseudo: 'creator', verified: true });
             spyOn(partDAO, 'update').and.callThrough();
@@ -1143,6 +1214,22 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
             const wrapper: OnlineGameWrapperComponent = componentTestUtils.wrapper as OnlineGameWrapperComponent;
             expect(wrapper.chronoZeroGlobal.remainingMs).toBe((30 * 60 * 1000) + (5 * 60 * 1000));
             tick(wrapper.joiner.maximalMoveDuration * 1000);
+        }));
+        it('should postponed the timeout of chrono and not only change displayed time', fakeAsync(async() => {
+            // Given an onlineGameComponent
+            await prepareStartedGameFor({ pseudo: 'creator', verified: true });
+            spyOn(partDAO, 'update').and.callThrough();
+            tick(1);
+
+            await receivePartDAOUpdate({
+                request: Request.localTimeAdded(Player.ZERO),
+            });
+
+            // then endgame should happend later
+            tick(wrapper.joiner.maximalMoveDuration * 1000);
+            expect(componentTestUtils.wrapper.endGame).withContext('game should not be finished yet').toBeFalse();
+            tick(30 * 1000);
+            expect(componentTestUtils.wrapper.endGame).withContext('game should be ended now').toBeTrue();
         }));
     });
     describe('User "handshake"', () => {
