@@ -42,10 +42,9 @@ export class AwaleRules extends Rules<AwaleMove, AwaleState, AwaleLegalityStatus
         return sum;
     }
     /**
-     * Modifies the move to addPart the capture.
-     * Modifies the board to get the after-move result.
-     * Returns -1 if it is not legal, if so, the board should not be affected
-     * Returns the number captured otherwise
+     * Returns the resulting board in AwaleLegalityStatus
+     * Returns the number of captured pieces
+     * Returns a MGPValidation like all LegalityStatuses
      */
     public static isLegal(move: AwaleMove, state: AwaleState): AwaleLegalityStatus {
         const turn: number = state.turn;
@@ -76,14 +75,10 @@ export class AwaleRules extends Rules<AwaleMove, AwaleState, AwaleLegalityStatus
         const boardBeforeCapture: number[][] = ArrayUtils.copyBiArray(resultingBoard);
         captured[player] = AwaleRules.capture(lastSpace.x, opponent, player, resultingBoard);
         if (AwaleRules.isStarving(opponent, resultingBoard)) {
-            if (captured[player] > 0) {
-                /**
-                 * if the distribution would capture all seeds
-                 * the move is legal but the capture is forbidden and cancelled
-                 */
-                resultingBoard = boardBeforeCapture; // undo the capturing
-                captured = [0, 0];
-            }
+            // if the distribution would capture all seeds
+            // the move is legal but the capture is forbidden and cancelled
+            resultingBoard = boardBeforeCapture; // undo the capturing
+            captured = [0, 0];
         }
         if (AwaleRules.isStarving(player, resultingBoard) && !AwaleRules.canDistribute(opponent, resultingBoard)) {
             // if the player distributed his last seeds and the opponent could not give him seeds

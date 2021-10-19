@@ -44,17 +44,13 @@ export class AwaleMinimax extends Minimax<AwaleMove, AwaleState, AwaleLegalitySt
             const toDistribute: number = board[player][move.x];
             const endCase: Coord = AwaleRules.distribute(move.x, player, board);
             let captured: number;
-            let sameTerritoryValue: number = 0;
             if (endCase.y === player) {
                 captured = 0;
-                if (toDistribute <= 6) {
-                    sameTerritoryValue = 10;
-                }
             } else {
                 captured = AwaleRules.capture(endCase.x, opponent, player, board);
             }
-            // Prioritise captured, then moves in same territory, then tries to minimize number of pieces distributed
-            return captured * 100 + sameTerritoryValue - toDistribute;
+            // Prioritise captured, then tries to minimize number of pieces distributed
+            return (captured * 100) - toDistribute;
         });
         return moves;
     }

@@ -57,5 +57,6 @@ describe('QuartoComponent', () => {
 
         const move: QuartoMove = new QuartoMove(3, 3, QuartoPiece.NONE);
         await componentTestUtils.expectMoveSuccess('#chooseCoord_3_3', move);
+        componentTestUtils.expectElementNotToExist('#pieceInHand');
     }));
 });

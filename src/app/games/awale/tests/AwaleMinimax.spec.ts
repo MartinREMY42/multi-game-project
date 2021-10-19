@@ -1,4 +1,4 @@
-import { AwaleRules } from '../AwaleRules';
+import { AwaleNode, AwaleRules } from '../AwaleRules';
 import { AwaleMinimax } from '../AwaleMinimax';
 import { AwaleMove } from '../AwaleMove';
 import { AwaleState } from '../AwaleState';
@@ -37,6 +37,22 @@ describe('AwaleMinimax:', () => {
         const node: MGPNode<AwaleRules, AwaleMove, AwaleState> = new MGPNode(null, null, state);
         const bestMove: AwaleMove = node.findBestMove(2, minimax);
         expect(bestMove).toEqual(AwaleMove.FOUR);
+    });
+    it('should not include illegal move', () => {
+        // Given a board with valid illegal moves
+        const board: number[][] = [
+            [5, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0],
+        ];
+        const state: AwaleState = new AwaleState(board, 0, [0, 0]);
+        const node: AwaleNode = new MGPNode(null, null, state);
+
+        // when asking list moves
+        const moves: AwaleMove[] = minimax.getListMoves(node);
+
+        // then length should be one and move be the only legal
+        expect(moves.length).toEqual(1);
+        expect(moves[0]).toBe(AwaleMove.FIVE);
     });
 });
 

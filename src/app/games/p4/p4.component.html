@@ -23,6 +23,7 @@
         </g>
     </g>
     <rect *ngIf="last"
+          id="last_{{ last.x }}_{{ last.y }}"
           [attr.x]="CASE_SIZE * last.x"
           [attr.y]="CASE_SIZE * last.y"
           [attr.width]="CASE_SIZE"
@@ -30,7 +31,7 @@
           class="base no-fill last-move mid-stroke"
     />
     <rect *ngFor="let coord of victoryCoords"
-          id="click_{{ x }}"
+          id="victory_{{ coord.x }}_{{ coord.y }}"
           (click)="onClick(x)"
           [attr.x]="CASE_SIZE * coord.x"
           [attr.y]="CASE_SIZE * coord.y"

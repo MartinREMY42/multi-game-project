@@ -113,7 +113,8 @@
             <div class="block" id="winnerIndicator" *ngIf="endGame">
                 <hr/>
                 <div *ngIf="currentPart.isDraw()">
-                    <p class="title" id="drawIndicator" *ngIf="currentPart.getWinner() == null" i18n>Draw</p>
+                    <p class="title" id="hardDrawIndicator" *ngIf="currentPart.isHardDraw()" i18n>Draw</p>
+                    <p class="title" id="agreedDrawIndicator" *ngIf="currentPart.isAgreedDraw()" i18n>You agreed to draw</p>
                 </div>
                 <div *ngIf="currentPart.isWin()">
                     <p class="title" id="youWonIndicator" *ngIf="currentPart.getWinner() === userName" i18n>You won.</p>

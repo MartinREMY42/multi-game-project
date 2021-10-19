@@ -2,7 +2,7 @@ import { AwaleNode, AwaleRules } from '../AwaleRules';
 import { AwaleMove } from '../AwaleMove';
 import { AwaleState } from '../AwaleState';
 import { AwaleLegalityStatus } from '../AwaleLegalityStatus';
-import { expectToBeDraw, expectToBeVictoryFor } from 'src/app/jscaip/tests/RulesUtils.spec';
+import { expectToBeDraw, expectToBeOngoing, expectToBeVictoryFor } from 'src/app/jscaip/tests/RulesUtils.spec';
 import { Player } from 'src/app/jscaip/Player';
 import { AwaleMinimax } from '../AwaleMinimax';
 import { MGPNode } from 'src/app/jscaip/MGPNode';
@@ -61,6 +61,30 @@ describe('AwaleRules', () => {
         const node: AwaleNode = new MGPNode(null, move, resultingState);
         expectToBeVictoryFor(rules, node, Player.ONE, minimaxes);
     });
+    it('should not do mansoon when possible distribution', () => {
+        // given a board where a player is about to give his last stone to opponent
+        const board: number[][] = [
+            [0, 0, 0, 0, 0, 1],
+            [1, 1, 2, 3, 4, 4],
+        ];
+        const state: AwaleState = new AwaleState(board, 0, [23, 10]);
+
+        // when player give his last stone
+        const move: AwaleMove = AwaleMove.FIVE;
+        const status: AwaleLegalityStatus = rules.isLegal(move, state);
+        const resultingState: AwaleState = rules.applyLegalMove(move, state, status);
+
+        // then, since other player can actually distribute, he do not mansoon all his pieces
+        const expectedBoard: number[][] = [
+            [0, 0, 0, 0, 0, 0],
+            [1, 1, 2, 3, 4, 5],
+        ];
+        const expectedState: AwaleState = new AwaleState(expectedBoard, 1, [23, 10]);
+        expect(status.legal.isSuccess()).toBeTrue();
+        expect(resultingState).toEqual(expectedState);
+        const node: AwaleNode = new MGPNode(null, move, resultingState);
+        expectToBeOngoing(rules, node, minimaxes);
+    });
     it('should forbid non-feeding move', () => {
         // given a board in which the player could and should feed his opponent
         const board: number[][] = [
@@ -75,6 +99,30 @@ describe('AwaleRules', () => {
 
         // then the move is illegal
         expect(status.legal.reason).toBe(AwaleFailure.SHOULD_DISTRIBUTE());
+    });
+    it('should allow mansoon on one last capture', () => {
+        // given a board where a player is about to eat every remaining stones
+        const board: number[][] = [
+            [0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 1],
+        ];
+        const state: AwaleState = new AwaleState(board, 0, [23, 23]);
+
+        // when player give his last stone
+        const move: AwaleMove = AwaleMove.FIVE;
+        const status: AwaleLegalityStatus = rules.isLegal(move, state);
+        const resultingState: AwaleState = rules.applyLegalMove(move, state, status);
+
+        // then, everything should be captured
+        const expectedBoard: number[][] = [
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0],
+        ];
+        const expectedState: AwaleState = new AwaleState(expectedBoard, 1, [23, 25]);
+        expect(status.legal.isSuccess()).toBeTrue();
+        expect(resultingState).toEqual(expectedState);
+        const node: AwaleNode = new MGPNode(null, move, resultingState);
+        expectToBeVictoryFor(rules, node, Player.ONE, minimaxes);
     });
     it('shoud distribute but not capture in case of would-starve move', () => {
         // given a board in which the player could capture all opponents seeds

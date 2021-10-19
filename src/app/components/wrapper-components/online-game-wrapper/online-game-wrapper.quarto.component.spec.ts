@@ -890,7 +890,7 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
                 lastMoveTime: firebase.firestore.FieldValue.serverTimestamp(),
                 result: MGPResult.DRAW.value,
             });
-            expect(componentTestUtils.findElement('#drawIndicator'))
+            expect(componentTestUtils.findElement('#hardDrawIndicator'))
                 .withContext('Component should show it is a draw.')
                 .toBeTruthy();
         }));
@@ -958,6 +958,9 @@ describe('OnlineGameWrapperComponent of Quarto:', () => {
 
             // then game should be over
             expectGameToBeOver();
+            expect(componentTestUtils.findElement('#agreedDrawIndicator'))
+                .withContext('Component should show it is an agreed draw.')
+                .toBeTruthy();
             expect(partDAO.update).toHaveBeenCalledTimes(1);
         }));
         it('should send refusal when player asks to', fakeAsync(async() => {

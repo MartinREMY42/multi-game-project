@@ -24,8 +24,7 @@ import { ArrayUtils } from 'src/app/utils/ArrayUtils';
 import { Time } from 'src/app/domain/Time';
 import { getMillisecondsDifference } from 'src/app/utils/TimeUtils';
 import { LegalityStatus } from 'src/app/jscaip/LegalityStatus';
-import { last } from 'rxjs/operators';
-import { AbstractGameState, GameState } from 'src/app/jscaip/GameState';
+import { AbstractGameState } from 'src/app/jscaip/GameState';
 
 export class UpdateType {
 
@@ -393,7 +392,6 @@ export class OnlineGameWrapperComponent extends GameWrapper implements OnInit, O
         this.stopCountdownsFor(player);
     }
     public notifyDraw(encodedMove: JSONValueWithoutArray, scorePlayerZero: number, scorePlayerOne: number): void {
-        console.log('found a draw !');
         this.endGame = true;
         this.gameService.updateDBBoard(this.currentPartId,
                                        encodedMove,
