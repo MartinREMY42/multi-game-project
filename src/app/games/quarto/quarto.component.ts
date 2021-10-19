@@ -38,14 +38,17 @@ export class QuartoComponent extends RectangularGameComponent<QuartoRules,
         ];
         this.encoder = QuartoMove.encoder;
         this.tutorial = new QuartoTutorial().tutorial;
-        this.pieceInHand = this.rules.node.gameState.pieceInHand;
         this.updateBoard();
     }
     public updateBoard(): void {
         const state: QuartoState = this.rules.node.gameState;
         const move: QuartoMove = this.rules.node.move;
         this.board = state.getCopiedBoard();
-        this.pieceInHand = state.pieceInHand;
+        if (state.pieceInHand !== QuartoPiece.NONE) {
+            this.pieceInHand = state.pieceInHand;
+        } else {
+            this.pieceInHand = null;
+        }
         this.victoriousCoords = this.rules.getVictoriousCoords(state);
 
         if (move == null) {

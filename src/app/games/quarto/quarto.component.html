@@ -96,7 +96,9 @@
                   [attr.transform]="'translate(' + (-0.75 * CASE_SIZE) + ', 0)'"
                   class="base no-fill"
             />
-            <g *ngIf="pieceInHand != null && chosen.x === -1">
+            <g id="pieceInHand"
+               *ngIf="pieceInHand != null && chosen.x === -1"
+            >
                 <rect *ngIf="pieceInHand.isRectangle() else circle"
                       [attr.x]="0"
                       [attr.y]="CASE_SIZE * 0.75"

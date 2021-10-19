@@ -34,7 +34,14 @@ export class Part implements DomainWrapper<IPart> {
         return this.doc.turn;
     }
     public isDraw(): boolean {
+        return this.doc.result === MGPResult.DRAW.value ||
+               this.doc.result === MGPResult.AGREED_DRAW.value;
+    }
+    public isHardDraw(): boolean {
         return this.doc.result === MGPResult.DRAW.value;
+    }
+    public isAgreedDraw(): boolean {
+        return this.doc.result === MGPResult.AGREED_DRAW.value;
     }
     public isWin(): boolean {
         return this.doc.result === MGPResult.VICTORY.value;
@@ -63,6 +70,7 @@ export interface ICurrentPartId {
 }
 export type IMGPResult = number;
 export class MGPResult {
+
     public static readonly DRAW: MGPResult = new MGPResult(0);
 
     public static readonly RESIGN: MGPResult = new MGPResult(1);

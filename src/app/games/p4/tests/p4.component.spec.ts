@@ -20,9 +20,10 @@ describe('P4Component', () => {
         expect(componentTestUtils.wrapper).toBeTruthy('Wrapper should be created');
         expect(componentTestUtils.getComponent()).toBeTruthy('Component should be created');
     });
-    it('should accept simple move', fakeAsync(async() => {
+    it('should accept and highlight simple move', fakeAsync(async() => {
         const move: P4Move = P4Move.THREE;
         await componentTestUtils.expectMoveSuccess('#click_3', move);
+        componentTestUtils.expectElementToExist('#last_3_5');
     }));
     it('should highlight victory', fakeAsync(async() => {
         const board: Table<Player> = [
@@ -35,6 +36,6 @@ describe('P4Component', () => {
         ];
         const state: P4State = new P4State(board, 0);
         componentTestUtils.setupState(state);
-        expect(componentTestUtils.getComponent().getCaseClasses(3, 3)).toContain('victory-stroke');
+        componentTestUtils.expectElementToHaveClass('#victory_3_3', 'victory-stroke');
     }));
 });

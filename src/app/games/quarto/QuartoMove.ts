@@ -8,7 +8,8 @@ export class QuartoMove extends MoveCoord {
             return 3 * 128 + 3 * 32 + 16;
         }
         public encodeNumber(move: QuartoMove): number {
-            /* x from 0 to 3
+            /**
+             * x from 0 to 3
              * y from 0 to 3
              * p from 0 to 16 included, 16 for the last turn
              */
