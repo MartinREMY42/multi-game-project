@@ -462,6 +462,11 @@
         <source>Go back to the game list</source>
         <target>Retour à la liste des parties</target>
       </trans-unit>
+      7974932122576857895
+      <trans-unit id="7974932122576857895" datatype="html">
+        <source>You agreed to draw.</source>
+        <target>Match nul accepté.</target>
+      </trans-unit>
       <trans-unit id="7250880851290385128" datatype="html">
         <source><x id="INTERPOLATION" equiv-text="{{ currentPart.getLoser() }}"/> has resigned.</source>
         <target><x id="INTERPOLATION" equiv-text="{{ currentPart.getLoser() }}"/> a abandonné.</target>
