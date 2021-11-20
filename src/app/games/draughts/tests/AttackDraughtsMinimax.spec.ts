@@ -3,22 +3,22 @@ import { MGPNode } from 'src/app/jscaip/MGPNode';
 import { Player } from 'src/app/jscaip/Player';
 import { Table } from 'src/app/utils/ArrayUtils';
 import { expectSecondStateToBeBetterThanFirst } from 'src/app/utils/tests/TestUtils.spec';
-import { AttackEpaminondasMinimax } from '../AttackEpaminondasMinimax';
-import { EpaminondasMove } from '../EpaminondasMove';
-import { EpaminondasState } from '../EpaminondasState';
-import { EpaminondasRules } from '../EpaminondasRules';
+import { AttackDraughtsMinimax } from '../AttackDraughtsMinimax';
+import { DraughtsMove } from '../DraughtsMove';
+import { EpaminondasState } from '../DraughtsState';
+import { DraughtsRules } from '../DraughtsRules';
 
 describe('AttackDraughtsMinimax:', () => {
 
-    let rules: EpaminondasRules;
-    let minimax: AttackEpaminondasMinimax;
+    let rules: DraughtsRules;
+    let minimax: AttackDraughtsMinimax;
     const _: Player = Player.NONE;
     const X: Player = Player.ONE;
     const O: Player = Player.ZERO;
 
     beforeEach(() => {
-        rules = new EpaminondasRules(EpaminondasState);
-        minimax = new AttackEpaminondasMinimax(rules, 'AttackEpaminondasMinimax');
+        rules = new DraughtsRules(EpaminondasState);
+        minimax = new AttackDraughtsMinimax(rules, 'AttackEpaminondasMinimax');
     });
     it('Should propose 114 moves at first turn', () => {
         expect(minimax.getListMoves(rules.node).length).toBe(114);
@@ -40,8 +40,8 @@ describe('AttackDraughtsMinimax:', () => {
         ];
         const state: EpaminondasState = new EpaminondasState(board, 1);
         rules.node = new MGPNode(null, null, state);
-        const expectedMove: EpaminondasMove = new EpaminondasMove(9, 1, 4, 4, Direction.LEFT);
-        const bestMove: EpaminondasMove = rules.node.findBestMove(1, minimax);
+        const expectedMove: DraughtsMove = new DraughtsMove(9, 1, 4, 4, Direction.LEFT);
+        const bestMove: DraughtsMove = rules.node.findBestMove(1, minimax);
         expect(bestMove).toEqual(expectedMove);
     });
     it('Should go forward', () => {

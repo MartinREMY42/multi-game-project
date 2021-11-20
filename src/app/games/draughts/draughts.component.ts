@@ -1,29 +1,29 @@
 import { Component } from '@angular/core';
 import { MGPValidation } from 'src/app/utils/MGPValidation';
-import { DraughtsLegalityStatus } from 'src/app/games/epaminondas/epaminondaslegalitystatus';
-import { EpaminondasMove } from 'src/app/games/epaminondas/EpaminondasMove';
-import { EpaminondasState } from 'src/app/games/epaminondas/EpaminondasState';
-import { EpaminondasRules } from 'src/app/games/epaminondas/EpaminondasRules';
-import { EpaminondasMinimax } from 'src/app/games/epaminondas/EpaminondasMinimax';
+import { DraughtsLegalityStatus } from 'src/app/games/draughts/DraughtsLegalityStatus';
+import { DraughtsMove } from 'src/app/games/draughts/DraughtsMove';
+import { DraughtsState } from 'src/app/games/draughts/DraughtsState';
+import { DraughtsRules } from 'src/app/games/draughts/DraughtsRules';
+import { DraughtsMinimax } from 'src/app/games/draughts/DraughtsMinimax';
 import { Coord } from 'src/app/jscaip/Coord';
 import { Direction } from 'src/app/jscaip/Direction';
 import { Player } from 'src/app/jscaip/Player';
 import { RectangularGameComponent } from '../../components/game-components/rectangular-game-component/RectangularGameComponent';
-import { PositionalEpaminondasMinimax } from './PositionalEpaminondasMinimax';
-import { AttackEpaminondasMinimax } from './AttackEpaminondasMinimax';
+import { PositionalDraughtsMinimax } from './PositionalDraughtsMinimax';
+import { AttackDraughtsMinimax } from './AttackDraughtsMinimax';
 import { MessageDisplayer } from 'src/app/services/message-displayer/MessageDisplayer';
 import { RulesFailure } from 'src/app/jscaip/RulesFailure';
-import { EpaminondasFailure } from './EpaminondasFailure';
-import { EpaminondasTutorial } from './EpaminondasTutorial';
+import { DraughtsFailure } from './DraughtsFailure';
+import { DraughtsTutorial } from './DraughtsTutorial';
 
 @Component({
-    selector: 'app-epaminondas',
-    templateUrl: './epaminondas.component.html',
+    selector: 'app-draughts',
+    templateUrl: './draughts.component.html',
     styleUrls: ['../../components/game-components/game-component/game-component.css'],
 })
-export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRules,
-                                                                   EpaminondasMove,
-                                                                   EpaminondasState,
+export class DraughtsComponent extends RectangularGameComponent<DraughtsRules,
+                                                                   DraughtsMove,
+                                                                   DraughtsState,
                                                                    Player,
                                                                    DraughtsLegalityStatus>
 {
@@ -47,14 +47,14 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
 
     public constructor(messageDisplayer: MessageDisplayer) {
         super(messageDisplayer);
-        this.rules = new EpaminondasRules(EpaminondasState);
+        this.rules = new DraughtsRules(DraughtsState);
         this.availableMinimaxes = [
-            new EpaminondasMinimax(this.rules, 'Normal'),
-            new PositionalEpaminondasMinimax(this.rules, 'Positional'),
-            new AttackEpaminondasMinimax(this.rules, 'Attack'),
+            new DraughtsMinimax(this.rules, 'Normal'),
+            new PositionalDraughtsMinimax(this.rules, 'Positional'),
+            new AttackDraughtsMinimax(this.rules, 'Attack'),
         ];
-        this.encoder = EpaminondasMove.encoder;
-        this.tutorial = new EpaminondasTutorial().tutorial;
+        this.encoder = DraughtsMove.encoder;
+        this.tutorial = new DraughtsTutorial().tutorial;
         this.updateBoard();
     }
     public updateBoard(): void {
@@ -67,7 +67,7 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
         this.board = this.rules.node.gameState.getCopiedBoard();
     }
     private showPreviousMove() {
-        const move: EpaminondasMove = this.rules.node.move;
+        const move: DraughtsMove = this.rules.node.move;
         let moved: Coord = move.coord;
         this.moveds = [moved];
         for (let i: number = 1; i < (move.stepSize + move.movedPieces); i++) {
@@ -227,27 +227,27 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
         const OPPONENT: Player = this.rules.node.gameState.getCurrentOpponent();
         const PLAYER: Player = this.rules.node.gameState.getCurrentPlayer();
         if (!clicked.isAlignedWith(this.firstPiece)) {
-            return this.cancelMove(EpaminondasFailure.CASE_NOT_ALIGNED_WITH_SELECTED());
+            return this.cancelMove(DraughtsFailure.CASE_NOT_ALIGNED_WITH_SELECTED());
         }
         const distance: number = clicked.getDistance(this.firstPiece);
         const direction: Direction = this.firstPiece.getDirectionToward(clicked).get();
         switch (this.board[y][x]) {
             case Player.NONE:
                 if (distance === 1) {
-                    return this.tryMove(new EpaminondasMove(this.firstPiece.x, this.firstPiece.y, 1, 1, direction));
+                    return this.tryMove(new DraughtsMove(this.firstPiece.x, this.firstPiece.y, 1, 1, direction));
                 } else {
-                    return this.cancelMove(EpaminondasFailure.SINGLE_PIECE_MUST_MOVE_BY_ONE());
+                    return this.cancelMove(DraughtsFailure.SINGLE_PIECE_MUST_MOVE_BY_ONE());
                 }
             case OPPONENT:
-                return this.cancelMove(EpaminondasFailure.SINGLE_PIECE_CANNOT_CAPTURE());
+                return this.cancelMove(DraughtsFailure.SINGLE_PIECE_CANNOT_CAPTURE());
             case PLAYER:
-                const incompleteMove: EpaminondasMove = new EpaminondasMove(this.firstPiece.x,
+                const incompleteMove: DraughtsMove = new DraughtsMove(this.firstPiece.x,
                                                                             this.firstPiece.y,
                                                                             distance,
                                                                             1,
                                                                             direction);
-                const state: EpaminondasState = this.rules.node.gameState;
-                const phalanxValidity: MGPValidation = EpaminondasRules.getPhalanxValidity(state, incompleteMove);
+                const state: DraughtsState = this.rules.node.gameState;
+                const phalanxValidity: MGPValidation = DraughtsRules.getPhalanxValidity(state, incompleteMove);
                 if (phalanxValidity.isFailure()) {
                     return this.cancelMove(phalanxValidity.reason);
                 } else {
@@ -270,7 +270,7 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
             return this.moveLastPiece(PLAYER);
         }
         if (!clicked.isAlignedWith(this.firstPiece)) {
-            return this.cancelMove(EpaminondasFailure.CASE_NOT_ALIGNED_WITH_PHALANX());
+            return this.cancelMove(DraughtsFailure.CASE_NOT_ALIGNED_WITH_PHALANX());
         }
         // The directions are valid because they are is aligned
         let phalanxDirection: Direction = Direction.factory.fromMove(this.firstPiece, this.lastPiece).get();
@@ -282,17 +282,17 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
             phalanxDirection = phalanxLanding;
         }
         if (phalanxDirection !== phalanxLanding) {
-            return this.cancelMove(EpaminondasFailure.CASE_NOT_ALIGNED_WITH_PHALANX());
+            return this.cancelMove(DraughtsFailure.CASE_NOT_ALIGNED_WITH_PHALANX());
         }
         if (this.board[y][x] === PLAYER) {
             this.lastPiece = clicked;
             const phalanxSize: number = this.firstPiece.getDistance(this.lastPiece) + 1;
-            const incompleteMove: EpaminondasMove = new EpaminondasMove(this.firstPiece.x,
+            const incompleteMove: DraughtsMove = new DraughtsMove(this.firstPiece.x,
                                                                         this.firstPiece.y,
                                                                         phalanxSize,
                                                                         1,
                                                                         phalanxDirection);
-            const phalanxValidity: MGPValidation = EpaminondasRules.getPhalanxValidity(this.rules.node.gameState,
+            const phalanxValidity: MGPValidation = DraughtsRules.getPhalanxValidity(this.rules.node.gameState,
                                                                                        incompleteMove);
             if (phalanxValidity.isFailure()) {
                 return this.cancelMove(phalanxValidity.reason);
@@ -305,7 +305,7 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
         } else {
             const phalanxSize: number = this.firstPiece.getDistance(this.lastPiece) + 1;
             const stepSize: number = this.lastPiece.getDistance(clicked);
-            const move: EpaminondasMove = new EpaminondasMove(this.firstPiece.x,
+            const move: DraughtsMove = new DraughtsMove(this.firstPiece.x,
                                                               this.firstPiece.y,
                                                               phalanxSize,
                                                               stepSize,
@@ -343,8 +343,8 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
         this.phalanxValidLandings = this.getPhalanxValidLandings();
         return MGPValidation.SUCCESS;
     }
-    public tryMove(move: EpaminondasMove): Promise<MGPValidation> {
-        const state: EpaminondasState = this.rules.node.gameState;
+    public tryMove(move: DraughtsMove): Promise<MGPValidation> {
+        const state: DraughtsState = this.rules.node.gameState;
         this.cancelMove();
         return this.chooseMove(move, state, null, null);
     }
@@ -385,7 +385,7 @@ export class EpaminondasComponent extends RectangularGameComponent<EpaminondasRu
     }
     private getCurrentPlayerPieces(): Coord[] {
         const pieces: Coord[] = [];
-        const state: EpaminondasState = this.rules.node.gameState;
+        const state: DraughtsState = this.rules.node.gameState;
         const player: Player = state.getCurrentPlayer();
         for (let y: number = 0; y < this.board.length; y++) {
             for (let x: number = 0; x < this.board[y].length; x++) {

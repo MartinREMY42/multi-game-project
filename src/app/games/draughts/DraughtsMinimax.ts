@@ -1,25 +1,25 @@
 import { Coord } from 'src/app/jscaip/Coord';
 import { Direction } from 'src/app/jscaip/Direction';
 import { Player } from 'src/app/jscaip/Player';
-import { DraughtsLegalityStatus } from './epaminondaslegalitystatus';
-import { EpaminondasMove } from './EpaminondasMove';
-import { EpaminondasState } from './EpaminondasState';
+import { DraughtsLegalityStatus } from './DraughtsLegalityStatus';
+import { DraughtsMove } from './DraughtsMove';
+import { DraughtsState } from './DraughtsState';
 import { NodeUnheritance } from 'src/app/jscaip/NodeUnheritance';
 import { Minimax } from 'src/app/jscaip/Minimax';
-import { EpaminondasNode, EpaminondasRules } from './EpaminondasRules';
+import { DraughtsNode, DraughtsRules } from './DraughtsRules';
 import { ArrayUtils } from 'src/app/utils/ArrayUtils';
 import { GameStatus } from 'src/app/jscaip/Rules';
 
-export class EpaminondasMinimax extends Minimax<EpaminondasMove, EpaminondasState, DraughtsLegalityStatus> {
+export class DraughtsMinimax extends Minimax<DraughtsMove, DraughtsState, DraughtsLegalityStatus> {
 
-    public static getListMoves(node: EpaminondasNode): EpaminondasMove[] {
+    public static getListMoves(node: DraughtsNode): DraughtsMove[] {
         const PLAYER: Player = node.gameState.getCurrentPlayer();
         const OPPONENT: Player = node.gameState.getCurrentOpponent();
         const EMPTY: Player = Player.NONE;
 
-        let moves: EpaminondasMove[] = [];
-        const state: EpaminondasState = node.gameState;
-        let move: EpaminondasMove;
+        let moves: DraughtsMove[] = [];
+        const state: DraughtsState = node.gameState;
+        let move: DraughtsMove;
         for (let y: number = 0; y < 12; y++) {
             for (let x: number = 0; x < 14; x++) {
                 const firstCoord: Coord = new Coord(x, y);
@@ -36,7 +36,7 @@ export class EpaminondasMinimax extends Minimax<EpaminondasMove, EpaminondasStat
                         while (nextCoord.isInRange(14, 12) &&
                             stepSize <= movedPieces &&
                             state.getPieceAt(nextCoord) === EMPTY) {
-                            move = new EpaminondasMove(x, y, movedPieces, stepSize, direction);
+                            move = new DraughtsMove(x, y, movedPieces, stepSize, direction);
                             moves = this.addMove(moves, move, state);
 
                             stepSize++;
@@ -45,7 +45,7 @@ export class EpaminondasMinimax extends Minimax<EpaminondasMove, EpaminondasStat
                         if (nextCoord.isInRange(14, 12) &&
                             stepSize <= movedPieces &&
                             state.getPieceAt(nextCoord) === OPPONENT) {
-                            move = new EpaminondasMove(x, y, movedPieces, stepSize, direction);
+                            move = new DraughtsMove(x, y, movedPieces, stepSize, direction);
                             moves = this.addMove(moves, move, state);
                         }
                     }
@@ -54,32 +54,32 @@ export class EpaminondasMinimax extends Minimax<EpaminondasMove, EpaminondasStat
         }
         return moves;
     }
-    public static addMove(moves: EpaminondasMove[],
-                          move: EpaminondasMove,
-                          state: EpaminondasState)
-    : EpaminondasMove[]
+    public static addMove(moves: DraughtsMove[],
+                          move: DraughtsMove,
+                          state: DraughtsState)
+    : DraughtsMove[]
     {
-        const legality: DraughtsLegalityStatus = EpaminondasRules.isLegal(move, state);
+        const legality: DraughtsLegalityStatus = DraughtsRules.isLegal(move, state);
         if (legality.legal.isSuccess()) {
             moves.push(move);
         }
         return moves;
     }
-    public getListMoves(node: EpaminondasNode): EpaminondasMove[] {
-        const moves: EpaminondasMove[] = EpaminondasMinimax.getListMoves(node);
-        ArrayUtils.sortByDescending(moves, (move: EpaminondasMove): number => {
+    public getListMoves(node: DraughtsNode): DraughtsMove[] {
+        const moves: DraughtsMove[] = DraughtsMinimax.getListMoves(node);
+        ArrayUtils.sortByDescending(moves, (move: DraughtsMove): number => {
             return move.stepSize; // Best for normal, might not be best for others!
         });
         return moves;
     }
-    public getBoardValue(node: EpaminondasNode): NodeUnheritance {
+    public getBoardValue(node: DraughtsNode): NodeUnheritance {
         const gameStatus: GameStatus = this.ruler.getGameStatus(node);
         if (gameStatus.isEndGame) {
             return new NodeUnheritance(gameStatus.toBoardValue());
         }
         return new NodeUnheritance(this.getPieceCountPlusRowDomination(node.gameState));
     }
-    public getPieceCountPlusRowDomination(state: EpaminondasState): number {
+    public getPieceCountPlusRowDomination(state: DraughtsState): number {
         const SCORE_BY_PIECE: number = 14*13*11;
         const SCORE_BY_ROW_DOMINATION: number = 2;
         const SCORE_BY_PRESENCE: number = 1;

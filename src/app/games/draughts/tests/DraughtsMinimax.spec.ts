@@ -2,23 +2,23 @@ import { Table } from 'src/app/utils/ArrayUtils';
 import { Direction } from 'src/app/jscaip/Direction';
 import { MGPNode } from 'src/app/jscaip/MGPNode';
 import { Player } from 'src/app/jscaip/Player';
-import { EpaminondasMove } from '../EpaminondasMove';
-import { EpaminondasState } from '../EpaminondasState';
-import { EpaminondasRules } from '../EpaminondasRules';
-import { EpaminondasMinimax } from '../EpaminondasMinimax';
+import { DraughtsMove } from '../DraughtsMove';
+import { EpaminondasState } from '../DraughtsState';
+import { DraughtsRules } from '../DraughtsRules';
+import { DraughtsMinimax } from '../DraughtsMinimax';
 import { expectSecondStateToBeBetterThanFirst } from 'src/app/utils/tests/TestUtils.spec';
 
 describe('DraughtsMinimax:', () => {
 
-    let rules: EpaminondasRules;
-    let minimax: EpaminondasMinimax;
+    let rules: DraughtsRules;
+    let minimax: DraughtsMinimax;
     const _: Player = Player.NONE;
     const X: Player = Player.ONE;
     const O: Player = Player.ZERO;
 
     beforeEach(() => {
-        rules = new EpaminondasRules(EpaminondasState);
-        minimax = new EpaminondasMinimax(rules, 'EpaminondasMinimax');
+        rules = new DraughtsRules(EpaminondasState);
+        minimax = new DraughtsMinimax(rules, 'EpaminondasMinimax');
     });
     it('Should propose 114 moves at first turn', () => {
         expect(minimax.getListMoves(rules.node).length).toBe(114);
@@ -40,8 +40,8 @@ describe('DraughtsMinimax:', () => {
         ];
         const state: EpaminondasState = new EpaminondasState(board, 0);
         rules.node = new MGPNode(null, null, state);
-        const capture: EpaminondasMove = new EpaminondasMove(4, 9, 2, 1, Direction.UP);
-        const bestMove: EpaminondasMove = rules.node.findBestMove(1, minimax);
+        const capture: DraughtsMove = new DraughtsMove(4, 9, 2, 1, Direction.UP);
+        const bestMove: DraughtsMove = rules.node.findBestMove(1, minimax);
         expect(bestMove).toEqual(capture);
     });
     it('Should consider two neighboor piece better than two separated piece', () => {

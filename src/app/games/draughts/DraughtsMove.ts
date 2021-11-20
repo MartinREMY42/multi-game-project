@@ -3,8 +3,8 @@ import { NumberEncoder } from 'src/app/jscaip/Encoder';
 import { MoveCoord } from 'src/app/jscaip/MoveCoord';
 import { MGPFallible } from 'src/app/utils/MGPFallible';
 
-export class EpaminondasMove extends MoveCoord {
-    public static encoder: NumberEncoder<EpaminondasMove> = new class extends NumberEncoder<EpaminondasMove> {
+export class DraughtsMove extends MoveCoord {
+    public static encoder: NumberEncoder<DraughtsMove> = new class extends NumberEncoder<DraughtsMove> {
         public maxValue(): number {
             const direction: number = 7;
             const stepSize: number = 6;
@@ -13,7 +13,7 @@ export class EpaminondasMove extends MoveCoord {
             const cx: number = 13;
             return (cx * 8 * 7 * 13 * 12) + (cy * 8 * 7 * 13) + (movedPieces * 8 * 7) + (stepSize * 8) + direction;
         }
-        public encodeNumber(move: EpaminondasMove): number {
+        public encodeNumber(move: DraughtsMove): number {
             const direction: number = move.direction.toInt(); // Between 0 and 7
             const stepSize: number = move.stepSize - 1; // Between 1 and 7 => between 0 and 6
             const movedPieces: number = move.movedPieces -1; // Between 1 and 13 => between 0 and 12
@@ -22,7 +22,7 @@ export class EpaminondasMove extends MoveCoord {
             const cx: number = move.coord.x; // Between 0 and 13
             return (cx * 8 * 7 * 13 * 12) + (cy * 8 * 7 * 13) + (movedPieces * 8 * 7) + (stepSize * 8) + direction;
         }
-        public decodeNumber(encodedMove: number): EpaminondasMove {
+        public decodeNumber(encodedMove: number): DraughtsMove {
             // encoded as such : cx; cy; movedPiece; stepSize; direction
             if (encodedMove % 1 !== 0) throw new Error('EncodedMove must be an integer.');
 
@@ -45,7 +45,7 @@ export class EpaminondasMove extends MoveCoord {
             const cx: number = encodedMove;
 
             const direction: MGPFallible<Direction> = Direction.factory.fromInt(encodedDirection);
-            return new EpaminondasMove(cx, cy, movedPieces + 1, stepSize + 1, direction.get());
+            return new DraughtsMove(cx, cy, movedPieces + 1, stepSize + 1, direction.get());
         }
     }
     public constructor(x: number,
@@ -83,7 +83,7 @@ export class EpaminondasMove extends MoveCoord {
                                   this.stepSize + ', ' +
                                   this.direction.toString() + ')';
     }
-    public equals(o: EpaminondasMove): boolean {
+    public equals(o: DraughtsMove): boolean {
         if (this === o) return true;
         if (!this.coord.equals(o.coord)) return false;
         if (this.movedPieces !== o.movedPieces) return false;

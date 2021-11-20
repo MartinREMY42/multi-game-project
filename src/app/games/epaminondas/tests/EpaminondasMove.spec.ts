@@ -5,7 +5,7 @@ import { EpaminondasMinimax } from '../EpaminondasMinimax';
 import { EpaminondasMove } from '../EpaminondasMove';
 import { NumberEncoderTestUtils } from 'src/app/jscaip/tests/Encoder.spec';
 
-describe('EpaminondasMove: ', () => {
+describe('DraughtsMove: ', () => {
 
     it('Should forbid null values', () => {
         expect(() => new EpaminondasMove(null, 1, 1, 1, Direction.UP)).toThrowError('X cannot be null.');
@@ -29,7 +29,7 @@ describe('EpaminondasMove: ', () => {
         expect(() => new EpaminondasMove(2, 2, 1, 0, Direction.UP))
             .toThrowError('Step size must be minimum one (got 0).');
     });
-    it('EpaminondasMove.encoder should be correct', () => {
+    it('DraughtsMove.encoder should be correct', () => {
         const rules: EpaminondasRules = new EpaminondasRules(EpaminondasState);
         const minimax: EpaminondasMinimax = new EpaminondasMinimax(rules, 'EpaminondasMinimax');
         const moves: EpaminondasMove[] = minimax.getListMoves(rules.node);
@@ -53,6 +53,6 @@ describe('EpaminondasMove: ', () => {
         expect(move.equals(secondCousin)).toBeFalse();
         expect(move.equals(thirdCousin)).toBeFalse();
         expect(move.equals(twin)).toBeTrue();
-        expect(move.toString()).toBe('EpaminondasMove((4, 3), m:2, s:1, UP)');
+        expect(move.toString()).toBe('DraughtsMove((4, 3), m:2, s:1, UP)');
     });
 });

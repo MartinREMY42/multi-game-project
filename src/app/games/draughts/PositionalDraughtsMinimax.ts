@@ -5,27 +5,27 @@ import { NodeUnheritance } from 'src/app/jscaip/NodeUnheritance';
 import { Player } from 'src/app/jscaip/Player';
 import { GameStatus } from 'src/app/jscaip/Rules';
 import { ArrayUtils } from 'src/app/utils/ArrayUtils';
-import { DraughtsLegalityStatus } from './epaminondaslegalitystatus';
-import { EpaminondasMinimax } from './EpaminondasMinimax';
-import { EpaminondasMove } from './EpaminondasMove';
-import { EpaminondasState } from './EpaminondasState';
-import { EpaminondasNode } from './EpaminondasRules';
+import { DraughtsLegalityStatus } from './DraughtsLegalityStatus';
+import { DraughtsMinimax } from './DraughtsMinimax';
+import { DraughtsMove } from './DraughtsMove';
+import { EpaminondasState } from './DraughtsState';
+import { DraughtsNode } from './DraughtsRules';
 
-export class PositionalEpaminondasMinimax extends Minimax<EpaminondasMove,
+export class PositionalDraughtsMinimax extends Minimax<DraughtsMove,
                                                           EpaminondasState,
                                                           DraughtsLegalityStatus>
 {
 
-    public getListMoves(node: EpaminondasNode): EpaminondasMove[] {
-        const moves: EpaminondasMove[] = EpaminondasMinimax.getListMoves(node);
+    public getListMoves(node: DraughtsNode): DraughtsMove[] {
+        const moves: DraughtsMove[] = DraughtsMinimax.getListMoves(node);
         return this.orderMovesByPhalanxSizeAndFilter(moves, node.gameState);
     }
-    private orderMovesByPhalanxSizeAndFilter(moves: EpaminondasMove[], state: EpaminondasState): EpaminondasMove[] {
-        ArrayUtils.sortByDescending(moves, (move: EpaminondasMove): number => {
+    private orderMovesByPhalanxSizeAndFilter(moves: DraughtsMove[], state: EpaminondasState): DraughtsMove[] {
+        ArrayUtils.sortByDescending(moves, (move: DraughtsMove): number => {
             return move.movedPieces;
         });
         if (moves.length > 40) {
-            const evenMoves: EpaminondasMove[] = moves.filter((move: EpaminondasMove) => {
+            const evenMoves: DraughtsMove[] = moves.filter((move: DraughtsMove) => {
                 if (this.moveIsCapture(move, state)) {
                     return true;
                 } else {
@@ -36,11 +36,11 @@ export class PositionalEpaminondasMinimax extends Minimax<EpaminondasMove,
         }
         return moves;
     }
-    private moveIsCapture(move: EpaminondasMove, state: EpaminondasState): boolean {
+    private moveIsCapture(move: DraughtsMove, state: EpaminondasState): boolean {
         const landing: Coord = move.coord.getNext(move.direction, move.movedPieces + move.stepSize - 1);
         return state.board[landing.y][landing.x] === state.getCurrentOpponent();
     }
-    public getBoardValue(node: EpaminondasNode): NodeUnheritance {
+    public getBoardValue(node: DraughtsNode): NodeUnheritance {
         const gameStatus: GameStatus = this.ruler.getGameStatus(node);
         if (gameStatus.isEndGame) {
             return new NodeUnheritance(gameStatus.toBoardValue());

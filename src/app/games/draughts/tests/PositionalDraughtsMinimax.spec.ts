@@ -2,23 +2,23 @@ import { Table } from 'src/app/utils/ArrayUtils';
 import { Direction } from 'src/app/jscaip/Direction';
 import { MGPNode } from 'src/app/jscaip/MGPNode';
 import { Player } from 'src/app/jscaip/Player';
-import { EpaminondasMove } from '../EpaminondasMove';
-import { EpaminondasState } from '../EpaminondasState';
-import { EpaminondasRules } from '../EpaminondasRules';
-import { PositionalEpaminondasMinimax } from '../PositionalEpaminondasMinimax';
+import { DraughtsMove } from '../DraughtsMove';
+import { EpaminondasState } from '../DraughtsState';
+import { DraughtsRules } from '../DraughtsRules';
+import { PositionalDraughtsMinimax } from '../PositionalDraughtsMinimax';
 import { expectSecondStateToBeBetterThanFirst } from 'src/app/utils/tests/TestUtils.spec';
 
 describe('PositionalDraughtsMinimax:', () => {
 
-    let rules: EpaminondasRules;
-    let minimax: PositionalEpaminondasMinimax;
+    let rules: DraughtsRules;
+    let minimax: PositionalDraughtsMinimax;
     const _: Player = Player.NONE;
     const X: Player = Player.ONE;
     const O: Player = Player.ZERO;
 
     beforeEach(() => {
-        rules = new EpaminondasRules(EpaminondasState);
-        minimax = new PositionalEpaminondasMinimax(rules, 'EpaminondasMinimax');
+        rules = new DraughtsRules(EpaminondasState);
+        minimax = new PositionalDraughtsMinimax(rules, 'EpaminondasMinimax');
     });
     it('Should filter number of choices', () => {
         expect(minimax.getListMoves(rules.node).length).toBeLessThan(114);
@@ -40,8 +40,8 @@ describe('PositionalDraughtsMinimax:', () => {
         ];
         const state: EpaminondasState = new EpaminondasState(board, 1);
         rules.node = new MGPNode(null, null, state);
-        const expectedMove: EpaminondasMove = new EpaminondasMove(9, 1, 4, 4, Direction.LEFT);
-        const bestMove: EpaminondasMove = rules.node.findBestMove(1, minimax);
+        const expectedMove: DraughtsMove = new DraughtsMove(9, 1, 4, 4, Direction.LEFT);
+        const bestMove: DraughtsMove = rules.node.findBestMove(1, minimax);
 
         expect(bestMove).toEqual(expectedMove);
     });

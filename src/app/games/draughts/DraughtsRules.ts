@@ -3,20 +3,20 @@ import { Coord } from 'src/app/jscaip/Coord';
 import { MGPNode } from 'src/app/jscaip/MGPNode';
 import { Player } from 'src/app/jscaip/Player';
 import { GameStatus, Rules } from 'src/app/jscaip/Rules';
-import { DraughtsLegalityStatus } from './epaminondaslegalitystatus';
-import { EpaminondasMove } from './EpaminondasMove';
-import { EpaminondasState } from './EpaminondasState';
-import { EpaminondasFailure } from './EpaminondasFailure';
+import { DraughtsLegalityStatus } from './DraughtsLegalityStatus';
+import { DraughtsMove } from './DraughtsMove';
+import { EpaminondasState } from './DraughtsState';
+import { DraughtsFailure } from './DraughtsFailure';
 import { RulesFailure } from 'src/app/jscaip/RulesFailure';
 
-export class EpaminondasNode extends MGPNode<EpaminondasRules,
-                                             EpaminondasMove,
+export class DraughtsNode extends MGPNode<DraughtsRules,
+                                             DraughtsMove,
                                              EpaminondasState,
                                              DraughtsLegalityStatus> {}
 
-export class EpaminondasRules extends Rules<EpaminondasMove, EpaminondasState, DraughtsLegalityStatus> {
+export class DraughtsRules extends Rules<DraughtsMove, EpaminondasState, DraughtsLegalityStatus> {
 
-    public static isLegal(move: EpaminondasMove, state: EpaminondasState): DraughtsLegalityStatus {
+    public static isLegal(move: DraughtsMove, state: EpaminondasState): DraughtsLegalityStatus {
         const phalanxValidity: MGPValidation = this.getPhalanxValidity(state, move);
         if (phalanxValidity.isFailure()) {
             return DraughtsLegalityStatus.failure(phalanxValidity.reason);
@@ -28,34 +28,34 @@ export class EpaminondasRules extends Rules<EpaminondasMove, EpaminondasState, D
         const newBoard: Player[][] = landingStatus.newBoard;
         const OPPONENT: Player = state.getCurrentOpponent();
         const captureValidity: DraughtsLegalityStatus =
-            EpaminondasRules.getCaptureValidity(state, newBoard, move, OPPONENT);
+            DraughtsRules.getCaptureValidity(state, newBoard, move, OPPONENT);
         if (captureValidity.legal.isFailure()) {
             return DraughtsLegalityStatus.failure(captureValidity.legal.reason);
         }
         return { newBoard, legal: MGPValidation.SUCCESS };
     }
-    public static getPhalanxValidity(state: EpaminondasState, move: EpaminondasMove): MGPValidation {
+    public static getPhalanxValidity(state: EpaminondasState, move: DraughtsMove): MGPValidation {
         let coord: Coord = move.coord;
         let soldierIndex: number = 0;
         let caseContent: Player;
         const OPPONENT: Player = state.getCurrentOpponent();
         while (soldierIndex < move.movedPieces) {
             if (coord.isNotInRange(14, 12)) {
-                return MGPValidation.failure(EpaminondasFailure.PHALANX_CANNOT_CONTAIN_PIECES_OUTSIDE_BOARD());
+                return MGPValidation.failure(DraughtsFailure.PHALANX_CANNOT_CONTAIN_PIECES_OUTSIDE_BOARD());
             }
             caseContent = state.getPieceAt(coord);
             if (caseContent === Player.NONE) {
-                return MGPValidation.failure(EpaminondasFailure.PHALANX_CANNOT_CONTAIN_EMPTY_CASE());
+                return MGPValidation.failure(DraughtsFailure.PHALANX_CANNOT_CONTAIN_EMPTY_CASE());
             }
             if (caseContent === OPPONENT) {
-                return MGPValidation.failure(EpaminondasFailure.PHALANX_CANNOT_CONTAIN_OPPONENT_PIECE());
+                return MGPValidation.failure(DraughtsFailure.PHALANX_CANNOT_CONTAIN_OPPONENT_PIECE());
             }
             coord = coord.getNext(move.direction, 1);
             soldierIndex++;
         }
         return MGPValidation.SUCCESS;
     }
-    public static getLandingStatus(state: EpaminondasState, move: EpaminondasMove): DraughtsLegalityStatus {
+    public static getLandingStatus(state: EpaminondasState, move: DraughtsMove): DraughtsLegalityStatus {
         const newBoard: Player[][] = state.getCopiedBoard();
         const CURRENT_PLAYER: Player = state.getCurrentPlayer();
         let emptied: Coord = move.coord;
@@ -65,17 +65,17 @@ export class EpaminondasRules extends Rules<EpaminondasMove, EpaminondasState, D
             newBoard[emptied.y][emptied.x] = Player.NONE;
             newBoard[landingCoord.y][landingCoord.x] = CURRENT_PLAYER;
             if (landingCoord.isNotInRange(14, 12)) {
-                return DraughtsLegalityStatus.failure(EpaminondasFailure.PHALANX_IS_LEAVING_BOARD());
+                return DraughtsLegalityStatus.failure(DraughtsFailure.PHALANX_IS_LEAVING_BOARD());
             }
             if (state.getPieceAt(landingCoord) !== Player.NONE) {
-                return DraughtsLegalityStatus.failure(EpaminondasFailure.SOMETHING_IN_PHALANX_WAY());
+                return DraughtsLegalityStatus.failure(DraughtsFailure.SOMETHING_IN_PHALANX_WAY());
             }
             landingIndex++;
             landingCoord = landingCoord.getNext(move.direction, 1);
             emptied = emptied.getNext(move.direction, 1);
         }
         if (landingCoord.isNotInRange(14, 12)) {
-            return DraughtsLegalityStatus.failure(EpaminondasFailure.PHALANX_IS_LEAVING_BOARD());
+            return DraughtsLegalityStatus.failure(DraughtsFailure.PHALANX_IS_LEAVING_BOARD());
         }
         if (state.getPieceAt(landingCoord) === CURRENT_PLAYER) {
             return DraughtsLegalityStatus.failure(RulesFailure.CANNOT_SELF_CAPTURE());
@@ -86,7 +86,7 @@ export class EpaminondasRules extends Rules<EpaminondasMove, EpaminondasState, D
     }
     public static getCaptureValidity(oldState: EpaminondasState,
                                      board: Player[][],
-                                     move: EpaminondasMove,
+                                     move: DraughtsMove,
                                      OPPONENT: Player)
     : DraughtsLegalityStatus
     {
@@ -102,16 +102,16 @@ export class EpaminondasRules extends Rules<EpaminondasMove, EpaminondasState, D
             }
             captured++;
             if (captured >= move.movedPieces) {
-                return DraughtsLegalityStatus.failure(EpaminondasFailure.PHALANX_SHOULD_BE_GREATER_TO_CAPTURE());
+                return DraughtsLegalityStatus.failure(DraughtsFailure.PHALANX_SHOULD_BE_GREATER_TO_CAPTURE());
             }
             capturedSoldier = capturedSoldier.getNext(move.direction, 1);
         }
         return { newBoard: board, legal: MGPValidation.SUCCESS };
     }
-    public isLegal(move: EpaminondasMove, state: EpaminondasState): DraughtsLegalityStatus {
-        return EpaminondasRules.isLegal(move, state);
+    public isLegal(move: DraughtsMove, state: EpaminondasState): DraughtsLegalityStatus {
+        return DraughtsRules.isLegal(move, state);
     }
-    public applyLegalMove(move: EpaminondasMove,
+    public applyLegalMove(move: DraughtsMove,
                           state: EpaminondasState,
                           status: DraughtsLegalityStatus)
     : EpaminondasState
@@ -119,7 +119,7 @@ export class EpaminondasRules extends Rules<EpaminondasMove, EpaminondasState, D
         const resultingState: EpaminondasState = new EpaminondasState(status.newBoard, state.turn + 1);
         return resultingState;
     }
-    public getGameStatus(node: EpaminondasNode): GameStatus {
+    public getGameStatus(node: DraughtsNode): GameStatus {
         const state: EpaminondasState = node.gameState;
         const zerosInFirstLine: number = state.count(Player.ZERO, 0);
         const onesInLastLine: number = state.count(Player.ONE, 11);
