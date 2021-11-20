@@ -5,18 +5,18 @@ import { Player } from 'src/app/jscaip/Player';
 import { GameStatus, Rules } from 'src/app/jscaip/Rules';
 import { DraughtsLegalityStatus } from './DraughtsLegalityStatus';
 import { DraughtsMove } from './DraughtsMove';
-import { EpaminondasState } from './DraughtsState';
+import { DraughtsState } from './DraughtsState';
 import { DraughtsFailure } from './DraughtsFailure';
 import { RulesFailure } from 'src/app/jscaip/RulesFailure';
 
 export class DraughtsNode extends MGPNode<DraughtsRules,
                                              DraughtsMove,
-                                             EpaminondasState,
+                                             DraughtsState,
                                              DraughtsLegalityStatus> {}
 
-export class DraughtsRules extends Rules<DraughtsMove, EpaminondasState, DraughtsLegalityStatus> {
+export class DraughtsRules extends Rules<DraughtsMove, DraughtsState, DraughtsLegalityStatus> {
 
-    public static isLegal(move: DraughtsMove, state: EpaminondasState): DraughtsLegalityStatus {
+    public static isLegal(move: DraughtsMove, state: DraughtsState): DraughtsLegalityStatus {
         const phalanxValidity: MGPValidation = this.getPhalanxValidity(state, move);
         if (phalanxValidity.isFailure()) {
             return DraughtsLegalityStatus.failure(phalanxValidity.reason);
@@ -34,7 +34,7 @@ export class DraughtsRules extends Rules<DraughtsMove, EpaminondasState, Draught
         }
         return { newBoard, legal: MGPValidation.SUCCESS };
     }
-    public static getPhalanxValidity(state: EpaminondasState, move: DraughtsMove): MGPValidation {
+    public static getPhalanxValidity(state: DraughtsState, move: DraughtsMove): MGPValidation {
         let coord: Coord = move.coord;
         let soldierIndex: number = 0;
         let caseContent: Player;
@@ -55,7 +55,7 @@ export class DraughtsRules extends Rules<DraughtsMove, EpaminondasState, Draught
         }
         return MGPValidation.SUCCESS;
     }
-    public static getLandingStatus(state: EpaminondasState, move: DraughtsMove): DraughtsLegalityStatus {
+    public static getLandingStatus(state: DraughtsState, move: DraughtsMove): DraughtsLegalityStatus {
         const newBoard: Player[][] = state.getCopiedBoard();
         const CURRENT_PLAYER: Player = state.getCurrentPlayer();
         let emptied: Coord = move.coord;
@@ -84,7 +84,7 @@ export class DraughtsRules extends Rules<DraughtsMove, EpaminondasState, Draught
         newBoard[landingCoord.y][landingCoord.x] = CURRENT_PLAYER;
         return { newBoard, legal: MGPValidation.SUCCESS };
     }
-    public static getCaptureValidity(oldState: EpaminondasState,
+    public static getCaptureValidity(oldState: DraughtsState,
                                      board: Player[][],
                                      move: DraughtsMove,
                                      OPPONENT: Player)
@@ -108,19 +108,19 @@ export class DraughtsRules extends Rules<DraughtsMove, EpaminondasState, Draught
         }
         return { newBoard: board, legal: MGPValidation.SUCCESS };
     }
-    public isLegal(move: DraughtsMove, state: EpaminondasState): DraughtsLegalityStatus {
+    public isLegal(move: DraughtsMove, state: DraughtsState): DraughtsLegalityStatus {
         return DraughtsRules.isLegal(move, state);
     }
     public applyLegalMove(move: DraughtsMove,
-                          state: EpaminondasState,
+                          state: DraughtsState,
                           status: DraughtsLegalityStatus)
-    : EpaminondasState
+    : DraughtsState
     {
-        const resultingState: EpaminondasState = new EpaminondasState(status.newBoard, state.turn + 1);
+        const resultingState: DraughtsState = new DraughtsState(status.newBoard, state.turn + 1);
         return resultingState;
     }
     public getGameStatus(node: DraughtsNode): GameStatus {
-        const state: EpaminondasState = node.gameState;
+        const state: DraughtsState = node.gameState;
         const zerosInFirstLine: number = state.count(Player.ZERO, 0);
         const onesInLastLine: number = state.count(Player.ONE, 11);
         if (state.turn % 2 === 0) {

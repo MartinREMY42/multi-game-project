@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output, Type } from '@angular/core';
 import { AbaloneComponent } from 'src/app/games/abalone/abalone.component';
 import { AwaleComponent } from 'src/app/games/awale/awale.component';
 import { CoerceoComponent } from 'src/app/games/coerceo/coerceo.component';
+import { DraughtsComponent } from 'src/app/games/draughts/draughts.component';
 import { DvonnComponent } from 'src/app/games/dvonn/dvonn.component';
 import { EncapsuleComponent } from 'src/app/games/encapsule/encapsule.component';
 import { EpaminondasComponent } from 'src/app/games/epaminondas/epaminondas.component';
@@ -31,6 +32,8 @@ class GameDescription {
     public static readonly AWALE: Localized = () => $localize`The international version of the famous African strategy game!`;
 
     public static readonly COERCEO: Localized = () => $localize`Get rid of all of your opponent's pieces on a board that shrinks little by little!`;
+
+    public static readonly DRAUGHTS: Localized = () => $localize`Jump over your enemies and conquer the board`;
 
     public static readonly DVONN: Localized = () => $localize`Stack your pieces and control as many stacks as you can to win!`;
 
@@ -96,6 +99,7 @@ export class GameInfo {
         new GameInfo($localize`Pentago`, 'Pentago', PentagoComponent, new Date('2021-05-23'), GameDescription.PENTAGO()), // 25 days after Six
         new GameInfo($localize`Abalone`, 'Abalone', AbaloneComponent, new Date('2021-07-13'), GameDescription.ABALONE()),
         new GameInfo($localize`Yinsh`, 'Yinsh', YinshComponent, new Date('2021-07-31'), GameDescription.YINSH()),
+        new GameInfo($localize`Dames / Draughts`, `Draughts`, DraughtsComponent, new Date('2021-11-20'), GameDescription.DRAUGHTS()),
     ].sort((a: GameInfo, b: GameInfo) => a.name.localeCompare(b.name));
     // After Gipf: median = 26d; average = 34d
     // 9d 10d 12d 13d 18d - 18d 20d 22d (25d 26d) 26d 49d 65d - 76d 93d 4m 7m 11m

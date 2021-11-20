@@ -8,11 +8,11 @@ import { ArrayUtils } from 'src/app/utils/ArrayUtils';
 import { DraughtsLegalityStatus } from './DraughtsLegalityStatus';
 import { DraughtsMinimax } from './DraughtsMinimax';
 import { DraughtsMove } from './DraughtsMove';
-import { EpaminondasState } from './DraughtsState';
+import { DraughtsState } from './DraughtsState';
 import { DraughtsNode } from './DraughtsRules';
 
 export class PositionalDraughtsMinimax extends Minimax<DraughtsMove,
-                                                          EpaminondasState,
+                                                          DraughtsState,
                                                           DraughtsLegalityStatus>
 {
 
@@ -20,7 +20,7 @@ export class PositionalDraughtsMinimax extends Minimax<DraughtsMove,
         const moves: DraughtsMove[] = DraughtsMinimax.getListMoves(node);
         return this.orderMovesByPhalanxSizeAndFilter(moves, node.gameState);
     }
-    private orderMovesByPhalanxSizeAndFilter(moves: DraughtsMove[], state: EpaminondasState): DraughtsMove[] {
+    private orderMovesByPhalanxSizeAndFilter(moves: DraughtsMove[], state: DraughtsState): DraughtsMove[] {
         ArrayUtils.sortByDescending(moves, (move: DraughtsMove): number => {
             return move.movedPieces;
         });
@@ -36,7 +36,7 @@ export class PositionalDraughtsMinimax extends Minimax<DraughtsMove,
         }
         return moves;
     }
-    private moveIsCapture(move: DraughtsMove, state: EpaminondasState): boolean {
+    private moveIsCapture(move: DraughtsMove, state: DraughtsState): boolean {
         const landing: Coord = move.coord.getNext(move.direction, move.movedPieces + move.stepSize - 1);
         return state.board[landing.y][landing.x] === state.getCurrentOpponent();
     }
@@ -47,7 +47,7 @@ export class PositionalDraughtsMinimax extends Minimax<DraughtsMove,
         }
         return new NodeUnheritance(this.getPieceCountThenSupportThenAdvancement(node.gameState));
     }
-    private getPieceCountThenSupportThenAdvancement(state: EpaminondasState): number {
+    private getPieceCountThenSupportThenAdvancement(state: DraughtsState): number {
         const MAX_ADVANCEMENT_SCORE_TOTAL: number = 28 * 12;
         const SCORE_BY_ALIGNEMENT: number = MAX_ADVANCEMENT_SCORE_TOTAL + 1; // OLDLY 13
         const MAX_NUMBER_OF_ALIGNEMENT: number = (24*16) + (4*15);
