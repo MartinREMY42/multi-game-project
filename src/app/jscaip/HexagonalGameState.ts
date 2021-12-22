@@ -1,5 +1,5 @@
 import { Table } from '../utils/ArrayUtils';
-import { assert } from '../utils/utils';
+import { Utils } from '../utils/utils';
 import { Coord } from './Coord';
 import { GameStateWithTable } from './GameStateWithTable';
 import { HexaDirection } from './HexaDirection';
@@ -29,9 +29,7 @@ export abstract class HexagonalGameState<P> extends GameStateWithTable<P> {
             throw new Error('Invalid excluded cases specification for HexagonalGameState.');
         }
     }
-    public setAtUnsafe(coord: Coord, v: P): this {
-        throw new Error('Should be overridden');
-    }
+    public abstract setAtUnsafe(coord: Coord, v: P): this
     public setAt(coord: Coord, v: P): this {
         if (this.isOnBoard(coord)) {
             return this.setAtUnsafe(coord, v);
@@ -39,7 +37,7 @@ export abstract class HexagonalGameState<P> extends GameStateWithTable<P> {
             throw new Error('Setting coord not on board: ' + coord + '.');
         }
     }
-    public equals(other: HexagonalGameState<P>, equalT: (a: P, b: P) => boolean): boolean {
+    public equalsT(other: HexagonalGameState<P>, equal: (a: P, b: P) => boolean): boolean {
         if (this === other) {
             return true;
         }
@@ -49,7 +47,7 @@ export abstract class HexagonalGameState<P> extends GameStateWithTable<P> {
         if (this.height !== other.height) {
             return false;
         }
-        if (equalT(this.empty, other.empty) === false) {
+        if (equal(this.empty, other.empty) === false) {
             return false;
         }
         if (this.excludedCases.length !== other.excludedCases.length) {
@@ -61,7 +59,7 @@ export abstract class HexagonalGameState<P> extends GameStateWithTable<P> {
             }
         }
         for (const coord of this.allCoords()) {
-            if (equalT(this.getNullable(coord), other.getNullable(coord)) === false) {
+            if (equal(this.getPieceAt(coord), other.getPieceAt(coord)) === false) {
                 return false;
             }
         }
@@ -115,13 +113,14 @@ export abstract class HexagonalGameState<P> extends GameStateWithTable<P> {
     }
     private findEntranceFrom(line: HexaLine, start: Coord): Coord {
         const dir: HexaDirection = line.getDirection();
-        let c: Coord = start;
+        let coord: Coord = start;
         for (let i: number = 0; i < Math.max(this.width, this.height); i++) {
-            if (this.isOnBoard(c)) {
-                return c;
+            if (this.isOnBoard(coord)) {
+                return coord;
             }
-            c = c.getNext(dir);
+            coord = coord.getNext(dir);
         }
-        assert(false, 'could not find a board entrance, board must be invalid');
+        Utils.handleError('could not find a board entrance, board must be invalid');
+        return new Coord(-1, -1);
     }
 }

@@ -3,19 +3,19 @@ import { TutorialStep } from './TutorialStep';
 import { QuartoMove } from 'src/app/games/quarto/QuartoMove';
 import { QuartoState } from 'src/app/games/quarto/QuartoState';
 import { QuartoPiece } from 'src/app/games/quarto/QuartoPiece';
-import { ComponentTestUtils } from 'src/app/utils/tests/TestUtils.spec';
+import { ComponentTestUtils, TestUtils } from 'src/app/utils/tests/TestUtils.spec';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { QuartoComponent } from '../../../games/quarto/quarto.component';
 import { MGPValidation } from 'src/app/utils/MGPValidation';
 import { TutorialFailure } from './TutorialFailure';
 import { RulesFailure } from 'src/app/jscaip/RulesFailure';
 import { Move } from 'src/app/jscaip/Move';
-import { LegalityStatus } from 'src/app/jscaip/LegalityStatus';
 import { Coord } from 'src/app/jscaip/Coord';
 import { Rules } from 'src/app/jscaip/Rules';
 import { Direction } from 'src/app/jscaip/Direction';
 import { GameInfo } from '../../normal-component/pick-game/pick-game.component';
 import { AbstractGameComponent } from '../../game-components/game-component/GameComponent';
+import { Router } from '@angular/router';
 
 import { EpaminondasRules } from 'src/app/games/epaminondas/EpaminondasRules';
 import { EpaminondasState } from 'src/app/games/epaminondas/EpaminondasState';
@@ -43,11 +43,24 @@ import { PylosState } from 'src/app/games/pylos/PylosState';
 import { PylosTutorial } from 'src/app/games/pylos/PylosTutorial';
 import { PylosMove } from 'src/app/games/pylos/PylosMove';
 import { PylosCoord } from 'src/app/games/pylos/PylosCoord';
-import { AbstractGameState } from 'src/app/jscaip/GameState';
+import { GameState } from 'src/app/jscaip/GameState';
 import { DvonnRules } from 'src/app/games/dvonn/DvonnRules';
 import { DvonnTutorial } from 'src/app/games/dvonn/DvonnTutorial';
 import { DvonnMove } from 'src/app/games/dvonn/DvonnMove';
 import { DvonnState } from 'src/app/games/dvonn/DvonnState';
+import { Utils } from 'src/app/utils/utils';
+import { ApagosTutorial } from 'src/app/games/apagos/ApagosTutorial';
+import { ApagosRules } from 'src/app/games/apagos/ApagosRules';
+import { ApagosState } from 'src/app/games/apagos/ApagosState';
+import { ApagosMove } from 'src/app/games/apagos/ApagosMove';
+import { ApagosCoord } from 'src/app/games/apagos/ApagosCoord';
+import { Player } from 'src/app/jscaip/Player';
+import { MGPFallible } from 'src/app/utils/MGPFallible';
+import { EncapsuleRules } from 'src/app/games/encapsule/EncapsuleRules';
+import { EncapsuleState } from 'src/app/games/encapsule/EncapsuleState';
+import { EncapsuleTutorial } from 'src/app/games/encapsule/EncapsuleTutorial';
+import { EncapsuleMove } from 'src/app/games/encapsule/EncapsuleMove';
+import { EncapsulePiece } from 'src/app/games/encapsule/EncapsulePiece';
 
 describe('TutorialGameWrapperComponent (wrapper)', () => {
 
@@ -117,7 +130,7 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
             wrapper.startTutorial(tutorial);
 
             // expect to see setted previous move
-            const actualMove: QuartoMove = wrapper.gameComponent.rules.node.move as QuartoMove;
+            const actualMove: QuartoMove = wrapper.gameComponent.rules.node.move.get() as QuartoMove;
             expect(expectedPreviousMove).toEqual(actualMove);
         }));
         it('Should show title of the steps, the selected one in bold', fakeAsync(async() => {
@@ -471,6 +484,7 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
             expect(wrapper.stepIndex).toEqual(0);
         }));
         it('Should redirect to local game when asking for it when finished', fakeAsync(async() => {
+            const router: Router = TestBed.inject(Router);
             // Given a finish tutorial
             wrapper.startTutorial([
                 TutorialStep.informational(
@@ -483,11 +497,11 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
             await componentTestUtils.clickElement('#nextButton');
 
             // when clicking play locally
-            spyOn(componentTestUtils.wrapper.router, 'navigate').and.callThrough();
+            spyOn(router, 'navigate').and.callThrough();
             await componentTestUtils.clickElement('#playLocallyButton');
 
             // expect navigator to have been called
-            expect(componentTestUtils.wrapper.router.navigate).toHaveBeenCalledWith(['local/Quarto']);
+            expect(router.navigate).toHaveBeenCalledWith(['local/Quarto']);
         }));
         it('Should redirect to online game when asking for it when finished and user is online', fakeAsync(async() => {
             // Given a finish tutorial
@@ -619,7 +633,7 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
 
             // when doing a (virtually) illegal move
             const error: string = 'some error message...';
-            spyOn(wrapper.gameComponent.rules, 'isLegal').and.returnValue(LegalityStatus.failure(error));
+            spyOn(wrapper.gameComponent.rules, 'isLegal').and.returnValue(MGPFallible.failure(error));
             await componentTestUtils.expectClickSuccess('#chooseCoord_0_0');
             tick(10);
             const move: QuartoMove = new QuartoMove(0, 0, QuartoPiece.BBBB);
@@ -665,6 +679,25 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
             expect(componentTestUtils.getComponent().canUserPlay('#chooseCoord_0_0').isSuccess()).toBeTrue();
             tick(10);
         }));
+        it('should not show error if cancelMove is called with no specified reason', fakeAsync(async() => {
+            // given a tutorial awaiting a move
+            const tutorial: TutorialStep[] = [
+                TutorialStep.anyMove(
+                    'title',
+                    'instruction',
+                    QuartoState.getInitialState(),
+                    new QuartoMove(0, 0, QuartoPiece.BABA),
+                    'Bravo !',
+                ),
+            ];
+            wrapper.startTutorial(tutorial);
+
+            // when cancelMove is called with no specified reason
+            wrapper.gameComponent.cancelMove();
+
+            // then no error is shown
+            componentTestUtils.expectElementNotToExist('#currentReason');
+        }));
         it('Should propose to see the solution when move attempt done', fakeAsync(async() => {
             // Given a tutorial on which a non-awaited move has been done
             const awaitedMove: QuartoMove = new QuartoMove(3, 3, QuartoPiece.BBAA);
@@ -698,7 +731,7 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
             await componentTestUtils.clickElement('#showSolutionButton');
 
             // Expect the first awaited move to have been done
-            expect(componentTestUtils.getComponent().rules.node.move).toEqual(awaitedMove);
+            expect(componentTestUtils.getComponent().rules.node.move.get()).toEqual(awaitedMove);
             expect(componentTestUtils.getComponent().rules.node.gameState.turn).toEqual(stepInitialTurn + 1);
             // expect 'solution' message to be shown
             const currentMessage: string =
@@ -955,7 +988,7 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
             await componentTestUtils.clickElement('#showSolutionButton');
 
             // Expect the step proposed move to have been done
-            expect(componentTestUtils.getComponent().rules.node.move).toEqual(solutionMove);
+            expect(componentTestUtils.getComponent().rules.node.move.get()).toEqual(solutionMove);
             expect(componentTestUtils.getComponent().rules.node.gameState.turn).toEqual(1);
             // expect 'solution' message to be shown
             const currentMessage: string =
@@ -967,14 +1000,34 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
     });
     describe('Tutorials', () => {
         it('Should make sure that predicate step have healthy behaviors', fakeAsync(async() => {
+            const apagosTutorial: TutorialStep[] = new ApagosTutorial().tutorial;
             const dvonnTutorial: TutorialStep[] = new DvonnTutorial().tutorial;
+            const encapsuleTutorial: TutorialStep[] = new EncapsuleTutorial().tutorial;
             const epaminondasTutorial: TutorialStep[] = new EpaminondasTutorial().tutorial;
             const pentagoTutorial: TutorialStep[] = new PentagoTutorial().tutorial;
             const pylosTutorial: TutorialStep[] = new PylosTutorial().tutorial;
             const saharaTutorial: TutorialStep[] = new SaharaTutorial().tutorial;
             const sixTutorial: TutorialStep[] = new SixTutorial().tutorial;
             const yinshTutorial: TutorialStep[] = new YinshTutorial().tutorial;
-            const stepExpectations: [Rules<Move, AbstractGameState>, TutorialStep, Move, MGPValidation][] = [
+            const stepExpectations: [Rules<Move, GameState, unknown>, TutorialStep, Move, MGPValidation][] = [
+                [
+                    new ApagosRules(ApagosState),
+                    apagosTutorial[2],
+                    ApagosMove.drop(ApagosCoord.ZERO, Player.ZERO),
+                    MGPValidation.failure($localize`This move is a drop, please do a transfer!`),
+                ],
+                [
+                    new ApagosRules(ApagosState),
+                    apagosTutorial[3],
+                    ApagosMove.drop(ApagosCoord.TWO, Player.ZERO),
+                    MGPValidation.failure($localize`You actively made your opponent win!`),
+                ],
+                [
+                    new ApagosRules(ApagosState),
+                    apagosTutorial[3],
+                    ApagosMove.transfer(ApagosCoord.THREE, ApagosCoord.TWO).get(),
+                    MGPValidation.failure($localize`Wrong choice, your opponent will win in the next turn no matter which piece is dropped!`),
+                ],
                 [
                     new DvonnRules(DvonnState),
                     dvonnTutorial[1],
@@ -985,6 +1038,21 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
                     dvonnTutorial[2],
                     DvonnMove.of(new Coord(2, 1), new Coord(1, 1)),
                     MGPValidation.failure($localize`You have not taken possession of a source, try again.`),
+                ], [
+                    new EncapsuleRules(EncapsuleState),
+                    encapsuleTutorial[3],
+                    EncapsuleMove.fromDrop(EncapsulePiece.BIG_BLACK, new Coord(0, 2)),
+                    MGPValidation.failure(`You won, but the exercise is to win while moving a piece!`),
+                ], [
+                    new EncapsuleRules(EncapsuleState),
+                    encapsuleTutorial[3],
+                    EncapsuleMove.fromMove(new Coord(0, 0), new Coord(0, 2)),
+                    MGPValidation.failure(`Failed. Try again.`),
+                ], [
+                    new EncapsuleRules(EncapsuleState),
+                    encapsuleTutorial[3],
+                    EncapsuleMove.fromMove(new Coord(0, 0), new Coord(1, 0)),
+                    MGPValidation.failure(`Failed. Try again.`),
                 ], [
                     new EpaminondasRules(EpaminondasState),
                     epaminondasTutorial[3],
@@ -1018,12 +1086,12 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
                 ], [
                     new SaharaRules(SaharaState),
                     saharaTutorial[2],
-                    new SaharaMove(new Coord(7, 0), new Coord(5, 0)),
+                    SaharaMove.from(new Coord(7, 0), new Coord(5, 0)).get(),
                     MGPValidation.failure(`You have made a double step, which is good but it is the next exercise!`),
                 ], [
                     new SaharaRules(SaharaState),
                     saharaTutorial[3],
-                    new SaharaMove(new Coord(2, 0), new Coord(2, 1)),
+                    SaharaMove.from(new Coord(2, 0), new Coord(2, 1)).get(),
                     MGPValidation.failure(`Failed! You have made a single step.`),
                 ], [
                     new SixRules(SixState),
@@ -1065,14 +1133,22 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
                 ],
             ];
             for (const stepExpectation of stepExpectations) {
-                const rules: Rules<Move, AbstractGameState> = stepExpectation[0];
+                const rules: Rules<Move, GameState, unknown> = stepExpectation[0];
                 const step: TutorialStep = stepExpectation[1];
                 const move: Move = stepExpectation[2];
                 const validation: MGPValidation = stepExpectation[3];
-                const status: LegalityStatus = rules.isLegal(move, step.state);
-                expect(status.legal.reason).toBeNull();
-                const state: AbstractGameState = rules.applyLegalMove(move, step.state, status);
-                expect(step.predicate(move, state)).toEqual(validation);
+                const moveResult: MGPFallible<unknown> = rules.isLegal(move, step.state);
+                if (moveResult.isSuccess()) {
+                    const state: GameState = rules.applyLegalMove(move, step.state, moveResult.get());
+                    if (step.isPredicate()) {
+                        expect(Utils.getNonNullable(step.predicate)(move, state)).toEqual(validation);
+                    } else {
+                        throw new Error('This test expects only predicate steps');
+                    }
+                } else {
+                    const context: string = 'Move should be legal to reach predicate but failed because';
+                    TestUtils.expectValidationSuccess(MGPValidation.ofFallible(moveResult), context);
+                }
             }
         }));
         it('Should make sure all solutionMove are legal', fakeAsync(async() => {
@@ -1082,16 +1158,21 @@ describe('TutorialGameWrapperComponent (wrapper)', () => {
                 }
                 const gameComponent: AbstractGameComponent =
                     TestBed.createComponent(gameInfo.component).debugElement.componentInstance;
-                const rules: Rules<Move, AbstractGameState> = gameComponent.rules;
+                const rules: Rules<Move, GameState, unknown> = gameComponent.rules;
                 const steps: TutorialStep[] = gameComponent.tutorial;
                 for (const step of steps) {
-                    if (step.solutionMove != null) {
-                        const status: LegalityStatus = rules.isLegal(step.solutionMove, step.state);
-                        expect(status.legal.reason).toBeNull();
-                        if (step.isPredicate()) {
-                            const state: AbstractGameState =
-                                rules.applyLegalMove(step.solutionMove, step.state, status);
-                            expect(step.predicate(step.solutionMove, state)).toEqual(MGPValidation.SUCCESS);
+                    if (step.hasSolution()) {
+                        const moveResult: MGPFallible<unknown> = rules.isLegal(step.getSolution(), step.state);
+                        if (moveResult.isSuccess()) {
+                            if (step.isPredicate()) {
+                                const state: GameState =
+                                    rules.applyLegalMove(step.getSolution(), step.state, moveResult.get());
+                                expect(Utils.getNonNullable(step.predicate)(step.getSolution(), state))
+                                    .toEqual(MGPValidation.SUCCESS);
+                            }
+                        } else {
+                            const context: string = 'Solution move should be legal but failed in "' + step.title + '"';
+                            expect(moveResult.getReason()).withContext(context).toBeNull();
                         }
                     }
                 }

@@ -3,12 +3,12 @@ import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 
-import { display, FirebaseJSONObject } from 'src/app/utils/utils';
+import { assert, display, FirebaseJSONObject, Utils } from 'src/app/utils/utils';
 import { MGPOptional } from 'src/app/utils/MGPOptional';
 import { FirebaseCollectionObserver } from '../FirebaseCollectionObserver';
 import { IFirebaseFirestoreDAO } from '../FirebaseFirestoreDAO';
 import { MGPMap } from 'src/app/utils/MGPMap';
-import { ObservableSubject } from 'src/app/utils/ObservableSubject';
+import { ObservableSubject } from 'src/app/utils/tests/ObservableSubject.spec';
 import { Time } from 'src/app/domain/Time';
 
 export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> implements IFirebaseFirestoreDAO<T> {
@@ -50,11 +50,11 @@ export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> imp
     }
     public async create(elementWithFieldValue: T): Promise<string> {
         const elemName: string = this.collectionName + this.getStaticDB().size();
-        const elementWithTime: T = this.getServerTimestampedObject(elementWithFieldValue);
+        const elementWithTime: T = Utils.getNonNullable(this.getServerTimestampedObject(elementWithFieldValue));
         await this.set(elemName, elementWithTime);
         return elemName;
     }
-    public getServerTimestampedObject<N extends FirebaseJSONObject>(elementWithFieldValue: N): N {
+    public getServerTimestampedObject<N extends FirebaseJSONObject>(elementWithFieldValue: N): N | null {
         if (elementWithFieldValue == null) {
             return null;
         }
@@ -68,21 +68,21 @@ export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> imp
         }
         return elementWithTime as N;
     }
-    public async read(id: string): Promise<T> {
+    public async read(id: string): Promise<MGPOptional<T>> {
         display(this.VERBOSE || FirebaseFirestoreDAOMock.VERBOSE, this.collectionName + '.read(' + id + ')');
 
         const optionalOS: MGPOptional<ObservableSubject<{id: string, doc: T}>> = this.getStaticDB().get(id);
         if (optionalOS.isPresent()) {
-            return optionalOS.get().subject.getValue().doc;
+            return MGPOptional.of(optionalOS.get().subject.getValue().doc);
         } else {
-            return null; // Firebase returns null if a document does not exist. This is behaviour relied upon!
+            return MGPOptional.empty();
         }
     }
     public async set(id: string, doc: T): Promise<void> {
         display(this.VERBOSE || FirebaseFirestoreDAOMock.VERBOSE,
                 this.collectionName + '.set(' + id + ', ' + JSON.stringify(doc) + ')');
 
-        const mappedDoc: T = this.getServerTimestampedObject(doc);
+        const mappedDoc: T = Utils.getNonNullable(this.getServerTimestampedObject(doc));
         const optionalOS: MGPOptional<ObservableSubject<{id: string, doc: T}>> = this.getStaticDB().get(id);
         const tid: {id: string, doc: T} = { id, doc: mappedDoc };
         if (optionalOS.isPresent()) {
@@ -102,7 +102,7 @@ export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> imp
         if (optionalOS.isPresent()) {
             const observableSubject: ObservableSubject<{id: string, doc: T}> = optionalOS.get();
             const oldDoc: T = observableSubject.subject.getValue().doc;
-            const mappedUpdate: Partial<T> = this.getServerTimestampedObject(update);
+            const mappedUpdate: Partial<T> = Utils.getNonNullable(this.getServerTimestampedObject(update));
             const newDoc: T = { ...oldDoc, ...mappedUpdate };
             observableSubject.subject.next({ id, doc: newDoc });
             return Promise.resolve();
@@ -113,7 +113,7 @@ export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> imp
     public async delete(id: string): Promise<void> {
         display(this.VERBOSE || FirebaseFirestoreDAOMock.VERBOSE, this.collectionName + '.delete(' + id + ')');
 
-        const optionalOS: MGPOptional<ObservableSubject<{id: string, doc: T}>> = this.getStaticDB().get(id);
+        const optionalOS: MGPOptional<ObservableSubject<{id: string, doc: T} | null>> = this.getStaticDB().get(id);
         if (optionalOS.isPresent()) {
             optionalOS.get().subject.next(null);
             this.getStaticDB().delete(id);
@@ -121,37 +121,39 @@ export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> imp
             throw new Error('Cannot delete element ' + id + ' absent from ' + this.collectionName);
         }
     }
-    public observingWhere(field: string,
-                          condition: firebase.firestore.WhereFilterOp,
-                          value: unknown,
+    public observingWhere(conditions: [string,
+                                       firebase.firestore.WhereFilterOp,
+                                       unknown][],
                           callback: FirebaseCollectionObserver<T>): () => void
     {
+        display(this.VERBOSE || FirebaseFirestoreDAOMock.VERBOSE,
+                { 'FirebaseFirestoreDAOMock_observingWhere': {
+                    collection: this.collectionName,
+                    conditions } });
         // Note, for now, only check first match field/condition/value at creation, not the added document matching it!
-        display(FirebaseFirestoreDAOMock.VERBOSE,
-                'FirebaseFirestoreDAOMock.observingWhere(' + field + condition + value);
-        if (condition === '==') {
-            display(this.VERBOSE || FirebaseFirestoreDAOMock.VERBOSE,
-                    { 'FirebaseFirestoreDAOMock_observingWhere': {
-                        collection: this.collectionName, field, condition, value, callback } });
-
-            const subscription: Subscription = this.subscribeToMatcher(field, value, callback);
-            if (subscription == null) {
-                return () => {};
-            } else {
-                return () => subscription.unsubscribe();
-            }
+        const subscription: Subscription | null = this.subscribeToMatchers(conditions, callback);
+        if (subscription == null) {
+            return () => {};
         } else {
-            throw new Error('FirebaseFirestoreDAOMock.observingWhere for non ==');
+            return () => subscription.unsubscribe();
         }
     }
-    private subscribeToMatcher(field: string,
-                               value: unknown,
-                               callback: FirebaseCollectionObserver<T>): Subscription
+    private subscribeToMatchers(conditions: [string,
+                                             firebase.firestore.WhereFilterOp,
+                                             unknown][],
+                                callback: FirebaseCollectionObserver<T>): Subscription | null
     {
         const db: MGPMap<string, ObservableSubject<{id: string, doc: T}>> = this.getStaticDB();
         for (let entryId: number = 0; entryId < db.size(); entryId++) {
             const entry: ObservableSubject<{id: string, doc: T}> = db.getByIndex(entryId).value;
-            if (entry.subject.value.doc[field] === value) {
+            let matches: boolean = true;
+            for (const condition of conditions) {
+                assert(condition[1] === '==', 'FirebaseFirestoreDAOMock currently only supports == as a condition');
+                if (entry.subject.value.doc[condition[0]] !== condition[2]) {
+                    matches = false;
+                }
+            }
+            if (matches) {
                 const ID: string = entry.subject.value.id;
                 const OBJECT: T = { ...entry.subject.value.doc };
                 callback.onDocumentCreated([entry.subject.value]);
@@ -164,5 +166,6 @@ export abstract class FirebaseFirestoreDAOMock<T extends FirebaseJSONObject> imp
                 });
             }
         }
+        return null;
     }
 }

@@ -9,11 +9,11 @@
     </defs>
     <ng-container *ngIf="isPlayerTurn()">
         <g *ngFor="let n of [0, 1, 2, 3, 4]">
-            <use *ngFor="let orientation of [['DOWN', n, -1], ['UP', n, 5], ['RIGHT', -1, n], ['LEFT', 5, n]]"
+            <use *ngFor="let orientation of [{ dir: 'DOWN', x: n, y: -1 }, { dir: 'UP', x: n, y: 5}, { dir: 'RIGHT', x: -1, y: n }, { dir: 'LEFT', x: 5, y: n }]"
                  xlink:href="#arrow"
-                 id="insertAt_{{orientation[1]}}_{{orientation[2]}}"
-                 (click)="insertAt(orientation[1], orientation[2])"
-                 [attr.transform]="getInsertionArrowTransform(orientation[1]+1, orientation[2]+1, orientation[0])"
+                 id="insertAt_{{orientation.x}}_{{orientation.y}}"
+                 (click)="insertAt(orientation.x, orientation.y)"
+                 [attr.transform]="getInsertionArrowTransform(orientation.x+1, orientation.y+1, orientation.dir)"
                  class="base mid-stroke"/>
         </g>
     </ng-container>
@@ -21,10 +21,10 @@
         <g *ngFor="let c of line; index as x">
             <rect id="insertAt_{{ x }}_{{ y }}"
                   (click)="insertAt(x, y)"
-                  [attr.x]="CASE_SIZE * (x + 1)"
-                  [attr.y]="CASE_SIZE * (y + 1)"
-                  [attr.width]="CASE_SIZE"
-                  [attr.height]="CASE_SIZE"
+                  [attr.x]="SPACE_SIZE * (x + 1)"
+                  [attr.y]="SPACE_SIZE * (y + 1)"
+                  [attr.width]="SPACE_SIZE"
+                  [attr.height]="SPACE_SIZE"
                   [ngClass]="getCaseClasses(x, y)"
                   class="base"
             />
@@ -39,8 +39,8 @@
                 <g *ngIf="choosingDirection(x, y)">
                     <circle id="chooseDirection_"
                             (click)="chooseDirection('')"
-                            [attr.cx]="(x+1)*CASE_SIZE + CASE_SIZE/2"
-                            [attr.cy]="(y+1)*CASE_SIZE + CASE_SIZE/2"
+                            [attr.cx]="((x+1) * SPACE_SIZE) + SPACE_SIZE/2"
+                            [attr.cy]="((y+1) * SPACE_SIZE) + SPACE_SIZE/2"
                             class="arrow selected-fill no-stroke"
                             r="8"/>
                     <use *ngFor="let direction of ['RIGHT', 'DOWN', 'LEFT', 'UP']"
@@ -53,7 +53,7 @@
             </g>
             <use *ngIf="isMountain(c)"
                  xlink:href="#mountain"
-                 [attr.transform]="'translate(' + ((x+1)*CASE_SIZE) + ' ' + ((y+1)*CASE_SIZE) + ')'"
+                 [attr.transform]="'translate(' + ((x+1) * SPACE_SIZE) + ' ' + ((y+1) * SPACE_SIZE) + ')'"
                  fill="brown" />
             <g *ngIf="choosingOrientation(x, y)">
                 <use *ngFor="let orientation of ['RIGHT', 'DOWN', 'LEFT', 'UP']"

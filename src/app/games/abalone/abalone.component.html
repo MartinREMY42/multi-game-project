@@ -18,7 +18,7 @@
                         (click)="onPieceClick(x, y)"
                         [attr.cx]="getCenterBy(x, y).x"
                         [attr.cy]="getCenterBy(x, y).y"
-                        [attr.r]="CASE_SIZE * 0.5"
+                        [attr.r]="SPACE_SIZE * 0.5"
                         [ngClass]="getPieceClasses(x, y)"
                         class="base"
                 />
@@ -37,7 +37,6 @@
     <g *ngFor="let arrow of directions">
         <line id="line_start_{{ arrow.dir.toString() }}"
               class="arrow"
-              (click)="onPieceClick(x, y)"
               [attr.x1]="arrow.startCenter.x"
               [attr.y1]="arrow.startCenter.y"
               [attr.x2]="arrow.middle.x"
@@ -51,11 +50,11 @@
               [attr.x2]="arrow.landingCenter.x"
               [attr.y2]="arrow.landingCenter.y"
         />
-        <polyline id="direction_{{ arrow.dir.toString() }}"
-                  points="-10 -5, 10 -5, 0 15, -10 -5"
-                  fill="black"
-                  [attr.transform]="arrow.transformation"
-                  (click)="chooseDirection(arrow.dir)"
+        <polygon id="direction_{{ arrow.dir.toString() }}"
+                 points="-10 -5, 10 -5, 0 15, -10 -5"
+                 class="arrow"
+                 [attr.transform]="arrow.transformation"
+                 (click)="chooseDirection(arrow.dir)"
         />
     </g>
 </svg>

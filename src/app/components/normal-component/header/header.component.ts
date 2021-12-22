@@ -1,47 +1,42 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthenticationService } from 'src/app/services/AuthenticationService';
+import { AuthenticationService, AuthUser } from 'src/app/services/AuthenticationService';
 import { Subscription } from 'rxjs';
-import { LocaleUtils } from 'src/app/utils/LocaleUtils';
+import { faCog, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
     selector: 'app-header',
     templateUrl: './header.component.html',
 })
 export class HeaderComponent implements OnInit, OnDestroy {
-    public userName: string;
+    public username: string = 'connecting...';
 
-    private joueurSub: Subscription;
+    public faCog: IconDefinition = faCog;
+
+    private userSub: Subscription;
 
     public showMenu: boolean = false;
-
-    public currentLanguage: string;
-    public availableLanguages: string[] = ['FR', 'EN'];
 
     constructor(public router: Router,
                 public authenticationService: AuthenticationService) {
     }
     public ngOnInit(): void {
-        this.currentLanguage = LocaleUtils.getLocale().toUpperCase();
-        this.joueurSub = this.authenticationService.getJoueurObs()
-            .subscribe((joueur: { pseudo: string, verified: boolean}) => {
-                if (joueur != null) {
-                    this.userName = joueur.pseudo;
+        this.userSub = this.authenticationService.getUserObs()
+            .subscribe((user: AuthUser) => {
+                if (user.username.isPresent()) {
+                    this.username = user.username.get();
+                } else if (user.email.isPresent()) {
+                    this.username = user.email.get();
                 } else {
-                    this.userName = null;
+                    this.username = '';
                 }
             });
     }
     public async logout(): Promise<void> {
         await this.authenticationService.disconnect();
-        this.router.navigate(['/login']);
-    }
-    public changeLanguage(language: string): void {
-        localStorage.setItem('locale', language.toLowerCase());
-        // Reload app for selected language
-        window.open(window.location.href, '_self');
+        await this.router.navigate(['/']);
     }
     public ngOnDestroy(): void {
-        this.joueurSub.unsubscribe();
+        this.userSub.unsubscribe();
     }
 }

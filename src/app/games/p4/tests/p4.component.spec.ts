@@ -36,6 +36,6 @@ describe('P4Component', () => {
         ];
         const state: P4State = new P4State(board, 0);
         componentTestUtils.setupState(state);
-        componentTestUtils.expectElementToHaveClass('#victory_3_3', 'victory-stroke');
+        componentTestUtils.expectElementToHaveClass('#victory_coord_3_3', 'victory-stroke');
     }));
 });

@@ -4,9 +4,7 @@ import { MinimaxTestingMove } from '../MinimaxTestingMove';
 import { MinimaxTestingMinimax } from '../MinimaxTestingMinimax';
 import { Player } from 'src/app/jscaip/Player';
 import { Coord } from 'src/app/jscaip/Coord';
-import { LegalityStatus } from 'src/app/jscaip/LegalityStatus';
-import { expectToBeOngoing, expectToBeVictoryFor } from 'src/app/jscaip/tests/RulesUtils.spec';
-import { MGPNode } from 'src/app/jscaip/MGPNode';
+import { RulesUtils } from 'src/app/jscaip/tests/RulesUtils.spec';
 
 describe('MinimaxTestingRules', () => {
 
@@ -53,20 +51,6 @@ describe('MinimaxTestingRules', () => {
         }
         expect(initialNode.countDescendants()).toEqual(6);
     });
-    it('Minimax should prune', () => {
-        MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_0;
-        const initialNode: MinimaxTestingNode = rules.node;
-        spyOn(minimax, 'getBoardValue').and.callThrough();
-        spyOn(minimax, 'getListMoves').and.callThrough();
-
-        rules.node.findBestMove(3, minimax);
-
-        expect(minimax.getBoardValue).toHaveBeenCalledTimes(11); // should be 14 without pruning
-        expect(initialNode.countDescendants()).toBe(11); // should be 14 without pruning as well
-        expect(minimax.getListMoves).toHaveBeenCalledTimes(6); // should be 7 without pruning
-
-        expect(initialNode.getHopedValue(minimax)).toBe(3);
-    });
     it('Should not go further than the end game', () => {
         MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_0;
         const initialNode: MinimaxTestingNode = rules.node;
@@ -75,11 +59,11 @@ describe('MinimaxTestingRules', () => {
 
         rules.node.findBestMove(7, minimax);
 
-        expect(minimax.getBoardValue).toHaveBeenCalledTimes(30); // should be 68 times without pruning
-        expect(initialNode.countDescendants()).toBe(30); // should be 68 without pruning
-        expect(minimax.getListMoves).toHaveBeenCalledTimes(24); // should be 69 without pruning
+        expect(minimax.getBoardValue).toHaveBeenCalledTimes(68);
+        expect(initialNode.countDescendants()).toBe(68);
+        expect(minimax.getListMoves).toHaveBeenCalledTimes(49);
     });
-    describe('Should choose the first one to minimise calculation when all choice are the same value', () => {
+    describe('Should choose the first one to minimize calculation when all choice are the same value', () => {
         it('depth = 1', () => {
             MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_2;
             const bestMove: MinimaxTestingMove = rules.node.findBestMove(1, minimax, false);
@@ -90,9 +74,10 @@ describe('MinimaxTestingRules', () => {
             MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_3;
             spyOn(minimax, 'getListMoves').and.callThrough();
             const bestMove: MinimaxTestingMove = rules.node.findBestMove(2, minimax, false);
-            expect(bestMove).toEqual(minimax.getListMoves(rules.node)[0]);
-            expect(rules.node.countDescendants()).toEqual(3);
+            // Depth = 2 means one call for the root node, and one for both of its children nodes, so 3 in total
             expect(minimax.getListMoves).toHaveBeenCalledTimes(3);
+            expect(bestMove).toEqual(minimax.getListMoves(rules.node)[0]);
+            expect(rules.node.countDescendants()).toEqual(6);
         });
     });
     it('should refuse to go right when on the extreme right', () => {
@@ -101,10 +86,9 @@ describe('MinimaxTestingRules', () => {
 
         // when attempting to go right
         const move: MinimaxTestingMove = MinimaxTestingMove.RIGHT;
-        const status: LegalityStatus = rules.isLegal(move, state);
 
         // should refuse
-        expect(status.legal.reason).toBe('incorrect move');
+        RulesUtils.expectMoveFailure(rules, state, move, 'incorrect move');
     });
     it('should refuse to go down when on the bottom', () => {
         // Given a board where you are on the right
@@ -112,45 +96,44 @@ describe('MinimaxTestingRules', () => {
 
         // when attempting to go right
         const move: MinimaxTestingMove = MinimaxTestingMove.DOWN;
-        const status: LegalityStatus = rules.isLegal(move, state);
 
         // should refuse
-        expect(status.legal.reason).toBe('incorrect move');
+        RulesUtils.expectMoveFailure(rules, state, move, 'incorrect move');
     });
     describe('GameStatus', () => {
         it('should recognize victory when on the player victory value (Player.ONE)', () => {
             MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_1;
             const state: MinimaxTestingState = new MinimaxTestingState(1, new Coord(1, 0));
 
-            const node: MinimaxTestingNode = new MGPNode(null, null, state);
-            expectToBeVictoryFor(rules, node, Player.ONE, [minimax]);
+            const node: MinimaxTestingNode = new MinimaxTestingNode(state);
+            RulesUtils.expectToBeVictoryFor(rules, node, Player.ONE, [minimax]);
         });
         it('should recognize victory when on the player victory value (Player.ZERO)', () => {
             MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_1;
             const state: MinimaxTestingState = new MinimaxTestingState(2, new Coord(0, 2));
 
-            const node: MinimaxTestingNode = new MGPNode(null, null, state);
-            expectToBeVictoryFor(rules, node, Player.ZERO, [minimax]);
+            const node: MinimaxTestingNode = new MinimaxTestingNode(state);
+            RulesUtils.expectToBeVictoryFor(rules, node, Player.ZERO, [minimax]);
         });
         it('should recognize ongoing part', () => {
             const state: MinimaxTestingState = new MinimaxTestingState(2, new Coord(0, 0));
 
-            const node: MinimaxTestingNode = new MGPNode(null, null, state);
-            expectToBeOngoing(rules, node, [minimax]);
+            const node: MinimaxTestingNode = new MinimaxTestingNode(state);
+            RulesUtils.expectToBeOngoing(rules, node, [minimax]);
         });
         it('should recognize victory when part is over and score is positive (Player.ZERO)', () => {
             MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_1;
             const state: MinimaxTestingState = new MinimaxTestingState(6, new Coord(3, 3));
 
-            const node: MinimaxTestingNode = new MGPNode(null, null, state);
-            expectToBeVictoryFor(rules, node, Player.ZERO, [minimax]);
+            const node: MinimaxTestingNode = new MinimaxTestingNode(state);
+            RulesUtils.expectToBeVictoryFor(rules, node, Player.ZERO, [minimax]);
         });
         it('should recognize victory when part is over and score is positive (Player.ONE)', () => {
             MinimaxTestingState.initialBoard = MinimaxTestingState.BOARD_4;
             const state: MinimaxTestingState = new MinimaxTestingState(6, new Coord(3, 3));
 
-            const node: MinimaxTestingNode = new MGPNode(null, null, state);
-            expectToBeVictoryFor(rules, node, Player.ONE, [minimax]);
+            const node: MinimaxTestingNode = new MinimaxTestingNode(state);
+            RulesUtils.expectToBeVictoryFor(rules, node, Player.ONE, [minimax]);
         });
     });
 });

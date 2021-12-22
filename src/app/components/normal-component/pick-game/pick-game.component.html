@@ -1,8 +1,8 @@
 <div class="select is-primary is-fullwidth">
-    <select id="gameType" (change)="onChange($event.target.value)">
+    <select id="gameType" (change)="onChange($event)">
         <option value=""
                 selected
-                >Choisir un jeu</option>
+                i18n>Pick a game</option>
         <option *ngFor="let gameName of gameNameList"
                 [value]="gameName">{{ gameName }}</option>
     </select>

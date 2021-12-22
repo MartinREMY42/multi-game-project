@@ -1,0 +1,162 @@
+.base {
+    stroke: var(--base-stroke);
+    stroke-width: 8;
+    fill: var(--background-fill);
+    stroke-linecap: butt;
+    stroke-linejoin: round;
+}
+.base-no-fill {
+    stroke: var(--base-stroke);
+    stroke-width: 8;
+}
+.arrow {
+    stroke: var(--base-stroke);
+    stroke-width: 3;
+}
+.text {
+    fill: var(--base-stroke);
+}
+.white-background {
+    fill: white;
+}
+.white-stroke {
+    stroke: white;
+}
+.background {
+    fill: var(--background-fill);
+}
+.background2 {
+    fill: var(--alt-background-fill);
+}
+.background3 {
+    fill: var(--alt-alt-background-fill);
+}
+.player0 {
+    fill: var(--player0);
+}
+.player0-alternate {
+    fill: var(--player0-alternate);
+}
+.player0-stroke {
+    stroke: var(--player0);
+}
+.player1 {
+    fill: var(--player1);
+}
+.player1-alternate {
+    fill: var(--player1-alternate);
+}
+.player1-stroke {
+    stroke: var(--player1);
+}
+.other-piece {
+    fill: var(--nonplayer);
+}
+.other-piece-light {
+    fill: var(--nonplayer-light);
+}
+.other-piece-stroke {
+    stroke: var(--nonplayer);
+}
+.dashed-stroke {
+    stroke-dasharray: 2;
+}
+.pre-captured {
+    fill: var(--pre-captured);
+}
+.captured {
+    fill: var(--captured);
+}
+.captured2 {
+    fill: var(--alt-captured);
+}
+.captured-stroke {
+    stroke: var(--captured);
+}
+.moved {
+    fill: var(--moved);
+}
+.moved-stroke {
+    stroke: var(--moved);
+}
+.indicator {
+    fill: var(--indicator);
+    stroke: none;
+}
+.highlighted {
+    stroke: var(--selectable);
+}
+.last-move {
+    stroke: var(--last-move);
+}
+.victory {
+    fill: var(--victory);
+}
+.victory-stroke {
+    stroke: var(--victory);
+}
+.selected {
+    stroke: var(--selected);
+}
+.selected-fill {
+    fill: var(--selected);
+}
+.clickable {
+    stroke: var(--clickable);
+}
+.clickable-hover:hover {
+    stroke: var(--clickable);
+}
+.capturable {
+    stroke-width: 2;
+    stroke: var(--capturable);
+}
+.capturable:hover {
+    stroke-width: 8;
+}
+.no-fill {
+    fill: none;
+}
+.no-stroke {
+    stroke: none;
+}
+.small-stroke {
+    stroke-width: 2;
+}
+.mid-small-stroke {
+    stroke-width: 3;
+}
+.mid-stroke {
+    stroke-width: 5;
+}
+.normal-stroke {
+    stroke-width: 8;
+}
+.transparent {
+    fill-opacity: 0.5;
+    stroke-opacity: 0.5;
+}
+.round {
+    stroke-linecap: round;
+}
+.text-big {
+    font: 50px sans-serif;
+}
+.text-bold {
+    font-weight: bold;
+}
+.text-big-vcenter {
+    dy: 17;
+}
+.text-medium {
+    font: 35px sans-serif;
+}
+.text-small {
+    font: 20 sans-serif;
+}
+.text-center {
+    text-anchor: middle;
+}
+svg {
+    max-height: calc(100vh - 10rem); /* Full height minus the navbar */
+}

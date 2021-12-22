@@ -1,16 +1,16 @@
 import { NumberEncoder } from 'src/app/jscaip/Encoder';
 import { Player } from 'src/app/jscaip/Player';
 import { ComparableObject } from 'src/app/utils/Comparable';
-import { assert } from 'src/app/utils/utils';
+import { assert, Utils } from 'src/app/utils/utils';
 
 export class YinshPiece implements ComparableObject {
 
     public static encoder: NumberEncoder<YinshPiece> =
-        NumberEncoder.ofCombination<YinshPiece, [Player, boolean]>(
+        NumberEncoder.tuple<YinshPiece, [Player, boolean]>(
             [Player.numberEncoder, NumberEncoder.booleanEncoder],
             (piece: YinshPiece): [Player, boolean] => [piece.player, piece.isRing],
-            ([player, isRing]: [Player, boolean]): YinshPiece => {
-                return YinshPiece.of(player, isRing);
+            (fields: [Player, boolean]): YinshPiece => {
+                return YinshPiece.of(fields[0], fields[1]);
             },
         );
     public static NONE: YinshPiece = new YinshPiece(Player.NONE, false);
@@ -54,7 +54,9 @@ export class YinshPiece implements ComparableObject {
             case YinshPiece.MARKER_ZERO: return 'MARKER_ZERO';
             case YinshPiece.MARKER_ONE: return 'MARKER_ONE';
             case YinshPiece.RING_ZERO: return 'RING_ZERO';
-            case YinshPiece.RING_ONE: return 'RING_ONE';
+            default:
+                Utils.expectToBe(this, YinshPiece.RING_ONE);
+                return 'RING_ONE';
         }
     }
 }

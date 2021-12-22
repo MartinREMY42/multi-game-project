@@ -9,18 +9,19 @@ import { Player } from 'src/app/jscaip/Player';
 import { Coord } from 'src/app/jscaip/Coord';
 import { MessageDisplayer } from 'src/app/services/message-displayer/MessageDisplayer';
 import { P4Tutorial } from './P4Tutorial';
+import { MGPOptional } from 'src/app/utils/MGPOptional';
 
 @Component({
     selector: 'app-p4',
     templateUrl: './p4.component.html',
-    styleUrls: ['../../components/game-components/game-component/game-component.css'],
+    styleUrls: ['../../components/game-components/game-component/game-component.scss'],
 })
 export class P4Component extends RectangularGameComponent<P4Rules, P4Move, P4State, Player> {
 
     public static VERBOSE: boolean = false;
 
-    public EMPTY_CASE: Player = Player.NONE;
-    public last: Coord;
+    public EMPTY_SPACE: Player = Player.NONE;
+    public last: MGPOptional<Coord>;
     public victoryCoords: Coord[] = [];
 
     public constructor(messageDisplayer: MessageDisplayer) {
@@ -39,22 +40,30 @@ export class P4Component extends RectangularGameComponent<P4Rules, P4Move, P4Sta
             return this.cancelMove(clickValidity.getReason());
         }
         const chosenMove: P4Move = P4Move.of(x);
-        return await this.chooseMove(chosenMove, this.rules.node.gameState, null, null);
+        return await this.chooseMove(chosenMove, this.rules.node.gameState);
     }
     public updateBoard(): void {
         const state: P4State = this.rules.node.gameState;
-        const lastMove: P4Move = this.rules.node.move;
+        const lastMove: MGPOptional<P4Move> = this.rules.node.move;
 
         this.victoryCoords = P4Rules.getVictoriousCoords(state);
         this.board = state.board;
-        if (lastMove == null) {
-            this.last = null;
+        if (lastMove.isPresent()) {
+            this.showLastMove();
         } else {
-            const y: number = P4Rules.getLowestUnoccupiedCase(state.board, lastMove.x) + 1;
-            this.last = new Coord(lastMove.x, y);
+            this.hideLastMove();
         }
     }
-    public getCaseFillClass(x: number, y: number): string[] {
+    private showLastMove() {
+        const state: P4State = this.rules.node.gameState;
+        const lastMove: MGPOptional<P4Move> = this.rules.node.move;
+        const y: number = P4Rules.getLowestUnoccupiedCase(state.board, lastMove.get().x) + 1;
+        this.last = MGPOptional.of(new Coord(lastMove.get().x, y));
+    }
+    private hideLastMove() {
+        this.last = MGPOptional.empty();
+    }
+    public getSquareFillClass(x: number, y: number): string[] {
         const content: Player = this.board[y][x];
         return [this.getPlayerClass(content)];
     }

@@ -5,11 +5,11 @@ export class DvonnPieceStack {
 
     public static sizeEncoder: NumberEncoder<number> = NumberEncoder.numberEncoder(49);
 
-    public static encoder: NumberEncoder<DvonnPieceStack> = NumberEncoder.ofCombination(
+    public static encoder: NumberEncoder<DvonnPieceStack> = NumberEncoder.tuple(
         [NumberEncoder.booleanEncoder, Player.numberEncoder, DvonnPieceStack.sizeEncoder],
         (stack: DvonnPieceStack): [boolean, Player, number] => [stack.source, stack.owner, stack.size],
-        ([hasSource, owner, size]: [boolean, Player, number]): DvonnPieceStack => {
-            return new DvonnPieceStack(owner, size, hasSource);
+        (fields: [boolean, Player, number]): DvonnPieceStack => {
+            return new DvonnPieceStack(fields[1], fields[2], fields[0]);
         })
     public static MAX_SIZE: number = 49; // The maximal possible size for a stack
     public static EMPTY: DvonnPieceStack = new DvonnPieceStack(Player.NONE, 0, false);

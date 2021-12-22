@@ -2,10 +2,14 @@ import { KamisadoColor } from './KamisadoColor';
 import { KamisadoPiece } from './KamisadoPiece';
 import { ArrayUtils, Table } from 'src/app/utils/ArrayUtils';
 import { Coord } from 'src/app/jscaip/Coord';
+import { Player } from 'src/app/jscaip/Player';
 
 export class KamisadoBoard {
+
     public static INITIAL: Table<KamisadoPiece> = KamisadoBoard.getInitialBoard();
+
     public static SIZE: number = 8;
+
     private static COLORS: Table<KamisadoColor> = ArrayUtils.mapBiArray([
         [1, 2, 3, 4, 5, 6, 7, 8],
         [6, 1, 4, 7, 2, 5, 8, 3],
@@ -23,14 +27,14 @@ export class KamisadoBoard {
     public static getInitialBoard(): Table<KamisadoPiece> {
         const _: KamisadoPiece = KamisadoPiece.NONE;
         return [
-            [1, 2, 3, 4, 5, 6, 7, 8].map(KamisadoPiece.ONE.of),
+            [1, 2, 3, 4, 5, 6, 7, 8].map((value: number) => KamisadoPiece.of(Player.ONE, value)),
             [_, _, _, _, _, _, _, _],
             [_, _, _, _, _, _, _, _],
             [_, _, _, _, _, _, _, _],
             [_, _, _, _, _, _, _, _],
             [_, _, _, _, _, _, _, _],
             [_, _, _, _, _, _, _, _],
-            [8, 7, 6, 5, 4, 3, 2, 1].map(KamisadoPiece.ZERO.of),
+            [8, 7, 6, 5, 4, 3, 2, 1].map((value: number) => KamisadoPiece.of(Player.ZERO, value)),
         ];
     }
     public static isEmptyAt(board: Table<KamisadoPiece>, coord: Coord): boolean {

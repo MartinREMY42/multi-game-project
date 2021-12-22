@@ -1,22 +1,26 @@
-import { Comparable, comparableEquals } from './Comparable';
+import { comparableEquals } from './Comparable';
 import { MGPOptional } from './MGPOptional';
-import { assert } from './utils';
 
-export abstract class MGPFallible<T extends Comparable> {
-    public static success<T extends Comparable>(value: NonNullable<T>): MGPFallible<T> {
-        if (value == null) throw new Error('Fallible cannot be created with empty value, use MGPFallible.failure instead');
+export abstract class MGPFallible<T> {
+    public static success<T>(value: T): MGPFallible<T> {
         return new MGPFallibleSuccess(value);
     }
-    public static failure<T extends Comparable>(reason: NonNullable<string>): MGPFallible<T> {
-        assert(reason != null, 'reason cannot be null');
+    public static failure<T>(reason: string): MGPFallible<T> {
         return new MGPFallibleFailure(reason);
     }
+
     public abstract isSuccess(): boolean
+
     public abstract isFailure(): boolean
-    public abstract get(): NonNullable<T>
-    public abstract getOrNull(): T
+
+    public abstract get(): T
+
     public abstract getReason(): string
+
+    public abstract getReasonOr(value: string): string
+
     public abstract toOptional(): MGPOptional<T>
+
     public equals(other: MGPFallible<T>): boolean {
         if (this.isFailure()) {
             return other.isFailure() && this.getReason() === other.getReason();
@@ -26,11 +30,13 @@ export abstract class MGPFallible<T extends Comparable> {
         }
         return comparableEquals(this.get(), other.get());
     }
-
 }
 
-class MGPFallibleSuccess<T extends Comparable> extends MGPFallible<T> {
-    public constructor(private readonly value: NonNullable<T>) {
+class MGPFallibleSuccess<T> extends MGPFallible<T> {
+
+    private __nominal: void; // For strict typing
+
+    public constructor(private readonly value: T) {
         super();
     }
     public isSuccess(): boolean {
@@ -39,21 +45,27 @@ class MGPFallibleSuccess<T extends Comparable> extends MGPFallible<T> {
     public isFailure(): boolean {
         return false;
     }
-    public get(): NonNullable<T> {
-        return this.value;
-    }
-    public getOrNull(): T {
+    public get(): T {
         return this.value;
     }
     public getReason(): string {
         throw new Error('Cannot get failure reason from a success');
     }
+    public getReasonOr(value: string): string {
+        return value;
+    }
     public toOptional(): MGPOptional<T> {
         return MGPOptional.of(this.value);
     }
+    public toString(): string {
+        return `MGPFallible.success(${this.value})`;
+    }
 }
 
-class MGPFallibleFailure<T extends Comparable> extends MGPFallible<T> {
+class MGPFallibleFailure<T> extends MGPFallible<T> {
+
+    private __nominal: void; // For strict typing
+
     public constructor(private readonly reason: string) {
         super();
     }
@@ -63,16 +75,19 @@ class MGPFallibleFailure<T extends Comparable> extends MGPFallible<T> {
     public isFailure(): boolean {
         return true;
     }
-    public get(): NonNullable<T> {
+    public get(): T {
         throw new Error('Value is absent from failure, with the following reason: ' + this.reason);
-    }
-    public getOrNull(): T {
-        return null;
     }
     public getReason(): string {
         return this.reason;
     }
+    public getReasonOr(_value: string): string {
+        return this.getReason();
+    }
     public toOptional(): MGPOptional<T> {
         return MGPOptional.empty();
+    }
+    public toString(): string {
+        return `MGPFallible.failure(${this.reason})`;
     }
 }

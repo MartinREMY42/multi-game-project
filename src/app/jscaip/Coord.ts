@@ -2,7 +2,7 @@ import { Direction, Vector } from 'src/app/jscaip/Direction';
 import { assert, JSONObject, JSONValue, JSONValueWithoutArray } from 'src/app/utils/utils';
 import { ComparableObject } from '../utils/Comparable';
 import { MGPFallible } from '../utils/MGPFallible';
-import { Encoder } from './Encoder';
+import { Encoder, NumberEncoder } from './Encoder';
 
 export class Coord implements ComparableObject {
 
@@ -17,11 +17,16 @@ export class Coord implements ComparableObject {
             return new Coord(casted.x as number, casted.y as number);
         }
     }
+    public static numberEncoder(width: number, height: number): NumberEncoder<Coord> {
+        return NumberEncoder.tuple(
+            [NumberEncoder.numberEncoder(width), NumberEncoder.numberEncoder(height)],
+            (coord: Coord): [number, number] => [coord.x, coord.y],
+            (fields: [number, number]): Coord => new Coord(fields[0], fields[1]),
+        );
+    }
     constructor(public readonly x: number,
                 public readonly y: number)
     {
-        if (x == null) throw new Error('X cannot be null.');
-        if (y == null) throw new Error('Y cannot be null.');
     }
     public getNext(dir: Vector, distance?: number): Coord {
         // return the next coord in the direction 'dir'
@@ -172,7 +177,6 @@ export class Coord implements ComparableObject {
 
     public equals(obj: Coord): boolean {
         if (this === obj) return true;
-        if (obj == null) return false;
         if (obj.x !== this.x) return false;
         return obj.y === this.y;
     }

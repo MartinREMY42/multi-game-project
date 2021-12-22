@@ -1,6 +1,5 @@
 import { Move } from '../../../jscaip/Move';
 import { Rules } from '../../../jscaip/Rules';
-import { LegalityStatus } from 'src/app/jscaip/LegalityStatus';
 import { Component } from '@angular/core';
 import { MGPValidation } from 'src/app/utils/MGPValidation';
 import { Player } from 'src/app/jscaip/Player';
@@ -8,7 +7,10 @@ import { Minimax } from 'src/app/jscaip/Minimax';
 import { MoveEncoder } from 'src/app/jscaip/Encoder';
 import { MessageDisplayer } from 'src/app/services/message-displayer/MessageDisplayer';
 import { TutorialStep } from '../../wrapper-components/tutorial-game-wrapper/TutorialStep';
-import { AbstractGameState } from 'src/app/jscaip/GameState';
+import { GameState } from 'src/app/jscaip/GameState';
+import { Utils } from 'src/app/utils/utils';
+import { of } from 'rxjs';
+import { MGPOptional } from 'src/app/utils/MGPOptional';
 
 
 /**
@@ -18,16 +20,16 @@ import { AbstractGameState } from 'src/app/jscaip/GameState';
  */
 @Component({
     template: '',
-    styleUrls: ['./game-component.css'],
+    styleUrls: ['./game-component.scss'],
 })
 export abstract class GameComponent<R extends Rules<M, S, L>,
                                     M extends Move,
-                                    S extends AbstractGameState,
-                                    L extends LegalityStatus = LegalityStatus>
+                                    S extends GameState,
+                                    L = void>
 {
     public encoder: MoveEncoder<M>;
 
-    public CASE_SIZE: number = 100;
+    public SPACE_SIZE: number = 100;
 
     public readonly STROKE_WIDTH: number = 8;
 
@@ -35,11 +37,11 @@ export abstract class GameComponent<R extends Rules<M, S, L>,
 
     public rules: R;
 
-    public availableMinimaxes: Minimax<M, S>[];
+    public availableMinimaxes: Minimax<M, S, L>[];
 
     public canPass: boolean;
 
-    public showScore: boolean;
+    public scores: MGPOptional<readonly [number, number]> = MGPOptional.empty();
 
     public imagesLocation: string = 'assets/images/';
 
@@ -49,8 +51,7 @@ export abstract class GameComponent<R extends Rules<M, S, L>,
 
     public chooseMove: (move: M,
                         state: S,
-                        scorePlayerZero: number,
-                        scorePlayerOne: number) => Promise<MGPValidation>;
+                        scores?: readonly [number, number]) => Promise<MGPValidation>;
 
     public canUserPlay: (element: string) => MGPValidation;
 
@@ -88,15 +89,32 @@ export abstract class GameComponent<R extends Rules<M, S, L>,
         switch (player) {
             case Player.ZERO: return 'player0';
             case Player.ONE: return 'player1';
-            case Player.NONE: return '';
+            default:
+                Utils.expectToBe(player, Player.NONE);
+                return '';
         }
+    }
+    public pass(): Promise<MGPValidation> {
+        Utils.handleError('GameComponent.pass() called on a game that does not redefine it');
+        return of(MGPValidation.failure('GameComponent.pass() called on a game that does not redefine it')).toPromise();
     }
     public getTurn(): number {
         return this.rules.node.gameState.turn;
     }
+    public getCurrentPlayer(): Player {
+        return this.rules.node.gameState.getCurrentPlayer();
+    }
+    public getState(): S {
+        return this.rules.node.gameState;
+    }
+    public getPreviousState(): S {
+        return this.rules.node.mother.get().gameState;
+    }
 }
 
-export abstract class AbstractGameComponent extends GameComponent<Rules<Move, AbstractGameState>,
+export abstract class AbstractGameComponent extends GameComponent<Rules<Move, GameState, unknown>,
                                                                   Move,
-                                                                  AbstractGameState> {
+                                                                  GameState, unknown>
+{
 }
+

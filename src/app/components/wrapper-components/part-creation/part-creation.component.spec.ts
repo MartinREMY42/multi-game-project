@@ -6,15 +6,16 @@ import { JoinerDAO } from 'src/app/dao/JoinerDAO';
 import { PartMocks } from 'src/app/domain/PartMocks.spec';
 import { PartDAO } from 'src/app/dao/PartDAO';
 import { ChatDAO } from 'src/app/dao/ChatDAO';
-import { JoueursDAO } from 'src/app/dao/JoueursDAO';
+import { UserDAO } from 'src/app/dao/UserDAO';
 import { IPart } from 'src/app/domain/icurrentpart';
-import { IJoueur } from 'src/app/domain/iuser';
+import { IUser } from 'src/app/domain/iuser';
 import { SimpleComponentTestUtils } from 'src/app/utils/tests/TestUtils.spec';
 import { FirstPlayer, PartStatus, PartType } from 'src/app/domain/ijoiner';
 import { Router } from '@angular/router';
 import { GameService } from 'src/app/services/GameService';
 import { ChatService } from 'src/app/services/ChatService';
 import { Utils } from 'src/app/utils/utils';
+import { MGPOptional } from 'src/app/utils/MGPOptional';
 
 describe('PartCreationComponent:', () => {
 
@@ -23,12 +24,12 @@ describe('PartCreationComponent:', () => {
 
     let joinerDAOMock: JoinerDAO;
     let partDAOMock: PartDAO;
-    let joueursDAOMock: JoueursDAO;
+    let joueursDAOMock: UserDAO;
 
     async function selectCustomGameAndChangeConfig(): Promise<void> {
         await testUtils.clickElement('#partTypeCustom');
-        component.configFormGroup.get('maximalMoveDuration').setValue(100);
-        component.configFormGroup.get('totalPartDuration').setValue(1000);
+        Utils.getNonNullable(component.configFormGroup.get('maximalMoveDuration')).setValue(100);
+        Utils.getNonNullable(component.configFormGroup.get('totalPartDuration')).setValue(1000);
         testUtils.detectChanges();
     }
     async function mockCandidateArrival(): Promise<void> {
@@ -39,20 +40,22 @@ describe('PartCreationComponent:', () => {
         await component.selectOpponent('firstCandidate');
         testUtils.detectChanges();
     }
-    const CREATOR: IJoueur = {
-        pseudo: 'creator',
+    const CREATOR: IUser = {
+        username: 'creator',
         state: 'online',
+        verified: true,
     };
-    const OPPONENT: IJoueur = {
-        pseudo: 'firstCandidate',
+    const OPPONENT: IUser = {
+        username: 'firstCandidate',
         state: 'online',
+        verified: true,
     };
     beforeEach(fakeAsync(async() => {
         testUtils = await SimpleComponentTestUtils.create(PartCreationComponent);
         const chatDAOMock: ChatDAO = TestBed.inject(ChatDAO);
         partDAOMock = TestBed.inject(PartDAO);
         joinerDAOMock = TestBed.inject(JoinerDAO);
-        joueursDAOMock = TestBed.inject(JoueursDAO);
+        joueursDAOMock = TestBed.inject(UserDAO);
         component = testUtils.getComponent();
         component.partId = 'joinerId';
         await chatDAOMock.set('joinerId', { messages: [], status: 'dummy status' });
@@ -178,7 +181,7 @@ describe('PartCreationComponent:', () => {
             ...JoinerMocks.WITH_ACCEPTED_CONFIG.doc,
             firstPlayer: FirstPlayer.CREATOR.value,
         });
-        const currentPart: IPart = await partDAOMock.read('joinerId');
+        const currentPart: IPart = (await partDAOMock.read('joinerId')).get();
         const expectedPart: IPart = { ...PartMocks.STARTING.doc, beginning: currentPart.beginning };
         expect(currentPart).toEqual(expectedPart);
     }));
@@ -198,7 +201,7 @@ describe('PartCreationComponent:', () => {
                 testUtils.expectElementToExist('#selected_firstCandidate');
                 await joinerDAOMock.update('joinerId', {
                     partStatus: PartStatus.PART_CREATED.value,
-                    chosenPlayer: '',
+                    chosenPlayer: null,
                     candidates: [],
                 });
                 testUtils.detectChanges();
@@ -273,7 +276,8 @@ describe('PartCreationComponent:', () => {
         it('should update the form data when changing first player', fakeAsync(async() => {
             testUtils.clickElement('#firstPlayerOpponent');
 
-            expect(component.configFormGroup.get('firstPlayer').value).toEqual(FirstPlayer.CHOSEN_PLAYER.value);
+            const firstPlayer: string = Utils.getNonNullable(component.configFormGroup.get('firstPlayer')).value;
+            expect(firstPlayer).toEqual(FirstPlayer.CHOSEN_PLAYER.value);
         }));
         it('should show detailed timing options when choosing a custom part type', fakeAsync(async() => {
             await testUtils.clickElement('#partTypeCustom');
@@ -290,16 +294,20 @@ describe('PartCreationComponent:', () => {
             await testUtils.clickElement('#partTypeBlitz');
             testUtils.detectChanges();
 
-            expect(component.configFormGroup.get('maximalMoveDuration').value).toBe(PartType.BLITZ_MOVE_DURATION);
-            expect(component.configFormGroup.get('totalPartDuration').value).toBe(PartType.BLITZ_PART_DURATION);
+            const maximalMoveDuration: number = Utils.getNonNullable(component.configFormGroup.get('maximalMoveDuration')).value;
+            expect(maximalMoveDuration).toBe(PartType.BLITZ_MOVE_DURATION);
+            const totalPartDuration: number = Utils.getNonNullable(component.configFormGroup.get('totalPartDuration')).value;
+            expect(totalPartDuration).toBe(PartType.BLITZ_PART_DURATION);
         }));
         it('should update the timings when reselecting normal part', fakeAsync(async() => {
             await testUtils.clickElement('#partTypeBlitz');
             await testUtils.clickElement('#partTypeStandard');
             testUtils.detectChanges();
 
-            expect(component.configFormGroup.get('maximalMoveDuration').value).toBe(PartType.NORMAL_MOVE_DURATION);
-            expect(component.configFormGroup.get('totalPartDuration').value).toBe(PartType.NORMAL_PART_DURATION);
+            const maximalMoveDuration: number = Utils.getNonNullable(component.configFormGroup.get('maximalMoveDuration')).value;
+            expect(maximalMoveDuration).toBe(PartType.NORMAL_MOVE_DURATION);
+            const totalPartDuration: number = Utils.getNonNullable(component.configFormGroup.get('totalPartDuration')).value;
+            expect(totalPartDuration).toBe(PartType.NORMAL_PART_DURATION);
         }));
         it('should dispatch to joiner service when clicking on review config button', fakeAsync(async() => {
             await joinerDAOMock.update('joinerId', {
@@ -443,7 +451,7 @@ describe('PartCreationComponent:', () => {
             component.userName = 'creator';
             component.partId = 'does not exist';
             const joinerDAOMock: JoinerDAO = TestBed.inject(JoinerDAO);
-            spyOn(joinerDAOMock, 'read').and.returnValue(Promise.resolve(null));
+            spyOn(joinerDAOMock, 'read').and.resolveTo(MGPOptional.empty());
             const joinerService: JoinerService = TestBed.inject(JoinerService);
             spyOn(joinerService, 'observe');
 
@@ -451,23 +459,6 @@ describe('PartCreationComponent:', () => {
             await testUtils.whenStable();
 
             expect(joinerService.observe).not.toHaveBeenCalled();
-        }));
-        it('should not fail if joiner update is null, and should redirect to server', fakeAsync(async() => {
-            // given a component with initial joiner present
-            component.userName = 'creator';
-            await joinerDAOMock.set('joinerId', JoinerMocks.INITIAL.doc);
-            testUtils.detectChanges();
-
-            const router: Router = TestBed.inject(Router);
-            spyOn(router, 'navigate');
-
-            // when joiner is updated and put to null, it means document has been removed
-            await joinerDAOMock.set('joinerId', null);
-
-            // then user should be moved to server
-            testUtils.detectChanges();
-            tick(3000); // test does not work with a tick(2999) or less
-            expect(router.navigate).toHaveBeenCalledWith(['server']);
         }));
     });
     it('should reroute to server when game is cancelled', fakeAsync(async() => {

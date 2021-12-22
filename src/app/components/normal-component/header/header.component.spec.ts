@@ -1,7 +1,7 @@
 import { fakeAsync } from '@angular/core/testing';
-import { AuthenticationService } from 'src/app/services/AuthenticationService';
+import { AuthUser } from 'src/app/services/AuthenticationService';
 import { AuthenticationServiceMock } from 'src/app/services/tests/AuthenticationService.spec';
-import { LocaleUtils } from 'src/app/utils/LocaleUtils';
+import { MGPOptional } from 'src/app/utils/MGPOptional';
 import { SimpleComponentTestUtils } from 'src/app/utils/tests/TestUtils.spec';
 import { HeaderComponent } from './header.component';
 
@@ -25,56 +25,15 @@ describe('HeaderComponent', () => {
         await testUtils.clickElement('#logout');
         expect(testUtils.getComponent().authenticationService.disconnect).toHaveBeenCalledTimes(1);
     }));
-    it('should have empty username when user is not authenticated', fakeAsync(async() => {
-        AuthenticationServiceMock.setUser(AuthenticationService.NOT_AUTHENTICATED);
-        testUtils.detectChanges();
-        expect(testUtils.getComponent().userName).toBeNull();
-    }));
     it('should have empty username when user is not connected', fakeAsync(async() => {
-        AuthenticationServiceMock.setUser(AuthenticationService.NOT_CONNECTED);
+        AuthenticationServiceMock.setUser(AuthUser.NOT_CONNECTED);
         testUtils.detectChanges();
-        expect(testUtils.getComponent().userName).toBeNull();
+        expect(testUtils.getComponent().username).toEqual('');
     }));
-    it('should use fr as the default language if the language of the navigator is not set', fakeAsync(async() => {
-        // given a navigator where the language is not set
-        localStorage.clear(); // local storage is empty
-        spyOn(LocaleUtils, 'getNavigatorLanguage').and.returnValue(null);
-
-        // when the header is loaded
+    it('should show user email if the user has not set its username yet', fakeAsync(async() => {
+        const email: string = 'jean@jaja.us';
+        AuthenticationServiceMock.setUser(new AuthUser(MGPOptional.of(email), MGPOptional.empty(), false));
         testUtils.detectChanges();
-
-        // then the default language is fr
-        expect(testUtils.getComponent().currentLanguage).toBe('FR');
-    }));
-    it('should update localStorage and redirect when a language change is made', fakeAsync(async() => {
-        // given a page in english where the header is loaded
-        spyOn(LocaleUtils, 'getNavigatorLanguage').and.returnValue('en-US');
-        spyOn(localStorage, 'setItem');
-        spyOn(window, 'open').and.returnValue(null);
-        testUtils.detectChanges();
-
-        // when another language is selected
-        testUtils.clickElement('#language_FR');
-
-        // then the language is changed and the page is reloaded
-        expect(localStorage.setItem).toHaveBeenCalledWith('locale', 'fr');
-        expect(window.open).toHaveBeenCalledWith(window.location.href, '_self');
-
-        localStorage.clear(); // clean up local storage
-    }));
-    it('should preserve the current route when a language change is made', fakeAsync(async() => {
-        // given a page in english where the header is loaded
-        spyOn(LocaleUtils, 'getNavigatorLanguage').and.returnValue('en-US');
-        spyOn(window, 'open').and.returnValue(null);
-        await testUtils.getComponent().router.navigate(['/server']);
-        testUtils.detectChanges();
-
-        // when another language is selected
-        testUtils.clickElement('#language_FR');
-
-        // then the current route is preserved when going to the new language
-        expect(window.open).toHaveBeenCalledWith(window.location.href, '_self');
-
-        localStorage.clear(); // clean up local storage
+        expect(testUtils.getComponent().username).toEqual(email);
     }));
 });

@@ -1,9 +1,9 @@
 import { Encoder } from 'src/app/jscaip/Encoder';
-import { Comparable, comparableEquals } from './Comparable';
+import { comparableEquals } from './Comparable';
 import { JSONValue } from './utils';
 
-export class MGPOptional<T extends Comparable> {
-    public static encoder<T extends Comparable>(encoderT: Encoder<T>): Encoder<MGPOptional<T>> {
+export class MGPOptional<T> {
+    public static encoder<T>(encoderT: Encoder<T>): Encoder<MGPOptional<T>> {
         return new class extends Encoder<MGPOptional<T>> {
             public encode(opt: MGPOptional<T>): JSONValue {
                 if (opt.isPresent()) {
@@ -16,23 +16,22 @@ export class MGPOptional<T extends Comparable> {
                 if (encoded === null) {
                     return MGPOptional.empty();
                 } else {
-                    return MGPOptional.of(encoderT.decode(encoded) as NonNullable<T>);
+                    return MGPOptional.of(encoderT.decode(encoded) as T);
                 }
             }
         };
     }
-    public static of<T extends Comparable>(value: NonNullable<T>): MGPOptional<T> {
-        if (value == null) throw new Error('Optional cannot be created with empty value, use MGPOptional.empty instead');
+    public static of<T>(value: T): MGPOptional<T> {
         return new MGPOptional(value);
     }
-    public static ofNullable<T extends Comparable>(value: T): MGPOptional<T> {
+    public static ofNullable<T>(value: T | null | undefined): MGPOptional<T> {
         if (value == null) return MGPOptional.empty();
-        return MGPOptional.of(value as NonNullable<T>);
+        return MGPOptional.of(value as T);
     }
-    public static empty<T extends Comparable>(): MGPOptional<T> {
-        return new MGPOptional(null);
+    public static empty<T>(): MGPOptional<T> {
+        return new MGPOptional(null as T | null);
     }
-    private constructor(private readonly value: T) {}
+    private constructor(private readonly value: T | null) {}
 
     public isPresent(): boolean {
         return this.value != null;
@@ -40,15 +39,19 @@ export class MGPOptional<T extends Comparable> {
     public isAbsent(): boolean {
         return this.value == null;
     }
-    public get(): NonNullable<T> {
+    public get(): T {
         if (this.isPresent()) {
-            return this.value as NonNullable<T>;
+            return this.value as T;
         } else {
             throw new Error('Value is absent');
         }
     }
-    public getOrNull(): T {
-        return this.value;
+    public getOrElse(defaultValue: T): T {
+        if (this.isPresent()) {
+            return this.value as T;
+        } else {
+            return defaultValue;
+        }
     }
     public equals(other: MGPOptional<T>): boolean {
         if (this.isAbsent()) {
@@ -59,11 +62,21 @@ export class MGPOptional<T extends Comparable> {
         }
         return comparableEquals(this.value, other.value);
     }
+    public equalsValue(other: T): boolean {
+        return this.equals(MGPOptional.of(other));
+    }
     public toString(): string {
         if (this.isAbsent()) {
             return 'MGPOptional.empty()';
         } else {
-            return `MGPOptional.of(${this.value.toString()})`;
+            return `MGPOptional.of(${this.value as T})`;
+        }
+    }
+    public map<U>(f: (value: T) => U): MGPOptional<U> {
+        if (this.isPresent()) {
+            return MGPOptional.of(f(this.get()));
+        } else {
+            return MGPOptional.empty();
         }
     }
 }
