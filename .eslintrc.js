@@ -23,6 +23,8 @@ module.exports = {
             'plugin:jasmine/recommended',
         ],
         rules: {
+            '@typescript-eslint/no-floating-promises': ['error'],
+            'jasmine/no-expect-in-setup-teardown': ['off'],
             'jasmine/expect-matcher': ['error'],
             'jasmine/new-line-before-expect': ['off'],
             'jasmine/new-line-between-declarations': ['off'],
@@ -43,7 +45,6 @@ module.exports = {
             '@typescript-eslint/switch-exhaustiveness-check': ['warn'],
             '@typescript-eslint/no-unused-expressions': ['warn'],
             '@typescript-eslint/no-unused-vars': ['warn'],
-            '@typescript-eslint/no-use-before-define': ['warn'],
             '@typescript-eslint/no-useless-constructor': ['warn'],
             '@typescript-eslint/typedef': [
                 'error',

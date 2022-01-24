@@ -9,8 +9,9 @@ if len(sys.argv) < 2:
     print('Usage: %s [generate|check]' % sys.argv[0])
     exit(1)
 
-def sort_function(x):
-    return str.lower(x)
+def sort_function(file_and_coverage):
+    return str.lower(file_and_coverage[0])
+
 def to_missing(x):
     "Converts from the string AA/BB to the number BB-AA"
     [low, high] = x.split('/')
@@ -53,7 +54,7 @@ def load_stored_coverage():
 
 def generate_in_file(data, path):
     f = open(path, mode='w', encoding='utf8')
-    for directory in sorted(data, key=sort_function):
+    for directory in dict(sorted(data.items(), key=sort_function)):
         if data[directory] > 0:
             # Only store if coverage is > 0
             f.write('%s,%d\n' % (directory, data[directory]))
